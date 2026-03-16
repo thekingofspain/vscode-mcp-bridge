@@ -6,3 +6,8 @@ esbuild.config.js
 **/*.map
 **/*.ts
 !out/**
+CONTEXT.md
+TESTING.md
+.vscode/**
+*.vsix
+.gitignore
