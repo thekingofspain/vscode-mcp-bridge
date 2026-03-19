@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { VsCodeBridge } from '../bridge/VsCodeBridge.js'
+import { TerminalManager } from '../terminal/TerminalManager.js'
 import type { Settings } from '../config/Settings.js'
 
 function symbolKindName(kind: number): string {
@@ -21,7 +22,7 @@ function serializeSymbols(symbols: Array<{ name: string; kind: number; range: { 
   }))
 }
 
-export function registerTools(server: McpServer, bridge: VsCodeBridge, settings: Settings): void {
+export function registerTools(server: McpServer, bridge: VsCodeBridge, settings: Settings, terminalManager: TerminalManager): void {
 
   // --- Active File ---
   server.tool('get_active_file', 'Get the currently active/open file in VS Code', {}, async () => {
@@ -382,6 +383,74 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       const allowedCommands = settings.get<Array<string>>('allowedCommands') ?? []
       const result = await bridge.executeCommand(command, args as Array<unknown>, allowedCommands)
       return { content: [{ type: 'text', text: JSON.stringify({ result }) }] }
+    }
+  )
+
+  // --- Managed Terminals (long-running processes) ---
+
+  server.tool(
+    'spawn_terminal',
+    'Spawn a long-running process (dev server, watch mode, etc.) in a VS Code terminal with output capture. Use run_terminal_command for short-lived commands instead.',
+    {
+      name: z.string().describe('Display name for the terminal (e.g. "dev-server", "tests-watch")'),
+      command: z.string().optional().describe('Command to run immediately (e.g. "npm run dev"). Omit to just open a shell.'),
+      cwd: z.string().optional().describe('Working directory (defaults to workspace root)'),
+    },
+    async ({ name, command, cwd }) => {
+      const result = terminalManager.spawn(name, command, cwd)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    }
+  )
+
+  server.tool(
+    'list_terminals',
+    'List all managed terminals and their status (alive/dead, PID, buffer size)',
+    {},
+    async () => {
+      const terminals = terminalManager.list()
+      return { content: [{ type: 'text', text: JSON.stringify(terminals) }] }
+    }
+  )
+
+  server.tool(
+    'read_terminal',
+    'Read recent output from a managed terminal. Returns the tail of the output buffer.',
+    {
+      id: z.string().describe('Terminal ID (from spawn_terminal or list_terminals)'),
+      lines: z.number().int().min(1).optional().describe('Number of lines to return from the end (default: all buffered output)'),
+    },
+    async ({ id, lines }) => {
+      const result = terminalManager.readOutput(id, lines)
+      if (!result) throw new Error(`Terminal '${id}' not found`)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    }
+  )
+
+  server.tool(
+    'write_terminal',
+    'Send input/text to a managed terminal (e.g. answer a prompt, send a command)',
+    {
+      id: z.string().describe('Terminal ID'),
+      input: z.string().describe('Text to send to the terminal stdin'),
+    },
+    async ({ id, input }) => {
+      const ok = terminalManager.write(id, input)
+      if (!ok) throw new Error(`Terminal '${id}' not found or not alive`)
+      return { content: [{ type: 'text', text: JSON.stringify({ sent: true }) }] }
+    }
+  )
+
+  server.tool(
+    'kill_terminal',
+    'Kill a managed terminal and its process',
+    {
+      id: z.string().describe('Terminal ID'),
+      signal: z.enum(['SIGTERM', 'SIGKILL', 'SIGINT']).optional().default('SIGTERM').describe('Signal to send'),
+    },
+    async ({ id, signal }) => {
+      const ok = terminalManager.kill(id, signal as NodeJS.Signals)
+      if (!ok) throw new Error(`Terminal '${id}' not found`)
+      return { content: [{ type: 'text', text: JSON.stringify({ killed: true }) }] }
     }
   )
 }

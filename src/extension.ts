@@ -2,11 +2,13 @@ import * as vscode from 'vscode'
 import { VsCodeBridge } from './bridge/VsCodeBridge.js'
 import { ContextPusher } from './context/ContextPusher.js'
 import { HttpServer } from './server/HttpServer.js'
+import { TerminalManager } from './terminal/TerminalManager.js'
 import { Settings } from './config/Settings.js'
 
 let httpServer: HttpServer | undefined
 let statusBarItem: vscode.StatusBarItem | undefined
 let contextPusher: ContextPusher | undefined
+let terminalManager: TerminalManager | undefined
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const settings = new Settings()
@@ -31,8 +33,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   statusBarItem.command = 'mcpServer.showStatus'
   context.subscriptions.push(statusBarItem)
 
+  // Terminal manager for long-running processes
+  terminalManager = new TerminalManager()
+
   // Start HTTP server
-  httpServer = new HttpServer(bridge, contextPusher, settings)
+  httpServer = new HttpServer(bridge, contextPusher, settings, terminalManager)
 
   async function startServer(): Promise<void> {
     try {
@@ -133,6 +138,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
+  terminalManager?.dispose()
   contextPusher?.stop()
   await httpServer?.stop()
 }

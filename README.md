@@ -8,7 +8,7 @@ Just point your AI coding tool at this README and tell it to install the MCP for
 
 ## Features
 
-- **23 MCP tools** covering file I/O, LSP, git, terminal, and VS Code UI
+- **28 MCP tools** covering file I/O, LSP, git, terminal, and VS Code UI
 - **Visual diffs** — agents call `show_diff` to open a native VS Code diff editor before any file is written
 - **Live diagnostics** — exposes TypeScript, ESLint, and any other LSP errors to the agent in real time
 - **Context push** — automatically notifies connected agents when the active file or selection changes
@@ -90,7 +90,12 @@ The status bar item (bottom right) shows the current port and connected agent co
 ### Terminal
 | Tool | Description |
 |---|---|
-| `run_terminal_command` | Run a shell command and capture stdout/stderr |
+| `run_terminal_command` | Run a short-lived shell command and capture stdout/stderr |
+| `spawn_terminal` | Spawn a long-running process (dev server, watch mode) with output capture |
+| `list_terminals` | List all managed terminals and their status |
+| `read_terminal` | Read recent output from a managed terminal |
+| `write_terminal` | Send input to a managed terminal |
+| `kill_terminal` | Kill a managed terminal and its process |
 
 ### VS Code
 | Tool | Description |
@@ -116,6 +121,31 @@ The server sends instructions to every connected agent on connect:
 - Call `get_diagnostics` when diagnosing errors rather than guessing
 - Use LSP tools (`go_to_definition`, `find_references`, `rename_symbol`) instead of text search for code navigation and refactoring
 - Call `get_diagnostics` again after making changes to confirm no new errors were introduced
+- Use `spawn_terminal` for long-running processes (dev servers, watch modes) instead of `run_terminal_command` which will timeout
+- Use `read_terminal` to check on spawned process output, and `kill_terminal` to clean up when done
+
+## Managed Terminals
+
+The `spawn_terminal` tool creates long-running processes (dev servers, watch modes, background tasks) that persist across tool calls. Each spawned terminal:
+
+- Appears in the VS Code terminal panel so you can see it running
+- Captures all stdout/stderr in a 128 KB ring buffer (keeps the most recent output)
+- Accepts input via `write_terminal` (e.g. answering prompts, sending commands)
+- Can be killed with a configurable signal (`SIGTERM`, `SIGINT`, `SIGKILL`)
+
+Typical orchestration flow:
+
+```
+spawn_terminal(name: "dev-server", command: "npm run dev")
+spawn_terminal(name: "tests", command: "npm test -- --watch")
+
+# ... later ...
+read_terminal(id: "term_1", lines: 20)   # check dev server output
+write_terminal(id: "term_2", input: "a")  # re-run all tests in jest
+kill_terminal(id: "term_1")               # stop dev server
+```
+
+Use `run_terminal_command` for short-lived commands (build, lint, install) that should return output directly. Use `spawn_terminal` for anything that runs indefinitely or needs to be checked on later.
 
 ## Context Push
 
