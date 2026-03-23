@@ -6,6 +6,7 @@ import { ContextPusher } from '../context/ContextPusher.js'
 import { TerminalManager } from '../terminal/TerminalManager.js'
 import { registerTools } from '../tools/index.js'
 import type { Settings } from '../config/Settings.js'
+import { log } from '../utils/logger.js'
 
 interface SessionEntry {
   transport: SSEServerTransport
@@ -89,6 +90,7 @@ export class HttpServer {
     }
 
     if (!this.checkAuth(req)) {
+      log.warn('Server', `Unauthorized request to ${req.url}`)
       res.writeHead(401, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Unauthorized' }))
       return
@@ -134,7 +136,6 @@ NAVIGATING CODE:
 MAKING CHANGES:
 - rename_symbol is refactor-safe and workspace-wide — often better than find-and-replace for identifiers.
 - After making changes, get_diagnostics can confirm no new errors were introduced.
-- get_git_diff can help review what has changed before committing.
 
 RUNNING COMMANDS:
 - run_terminal_command works well for short-lived commands (build, test, lint, install).
@@ -173,12 +174,14 @@ GENERAL:
       : () => undefined
 
     this.sessions.set(sessionId, { transport, unsubscribePush })
+    log.info('Server', `SSE session connected: ${sessionId} (total: ${this.sessions.size})`)
 
     req.on('close', () => {
       const session = this.sessions.get(sessionId)
       if (session) {
         session.unsubscribePush()
         this.sessions.delete(sessionId)
+        log.info('Server', `SSE session disconnected: ${sessionId} (total: ${this.sessions.size})`)
       }
     })
 
@@ -191,6 +194,7 @@ GENERAL:
     const session = this.sessions.get(sessionId)
 
     if (!session) {
+      log.warn('Server', `Message for unknown session: ${sessionId}`)
       res.writeHead(404, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Session not found' }))
       return

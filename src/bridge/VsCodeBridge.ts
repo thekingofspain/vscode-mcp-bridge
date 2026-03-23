@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
-import type { GitExtension, Repository, Status } from '../types/git.js'
 
 export interface ActiveFileSnapshot {
   path: string
@@ -27,6 +26,7 @@ export interface OpenTab {
   language: string
   isDirty: boolean
   isActive: boolean
+  type: 'file' | 'diff'
 }
 
 export interface DiagnosticItem {
@@ -45,32 +45,6 @@ export interface TerminalResult {
   stdout: string
   stderr: string
   exitCode: number | null
-}
-
-export interface GitStatus {
-  branch: string
-  upstream: string | null
-  ahead: number
-  behind: number
-  staged: Array<{ path: string; status: string }>
-  unstaged: Array<{ path: string; status: string }>
-  untracked: Array<string>
-}
-
-function statusToString(status: Status): string {
-  const map: Record<number, string> = {
-    0: 'INDEX_MODIFIED',
-    1: 'INDEX_ADDED',
-    2: 'INDEX_DELETED',
-    3: 'INDEX_RENAMED',
-    4: 'INDEX_COPIED',
-    5: 'MODIFIED',
-    6: 'DELETED',
-    7: 'UNTRACKED',
-    8: 'IGNORED',
-    9: 'INTENT_TO_ADD',
-  }
-  return map[status as number] ?? 'UNKNOWN'
 }
 
 // In-memory file system provider for diff previews
@@ -157,6 +131,22 @@ export class VsCodeBridge {
             language: doc?.languageId ?? path.extname(uri.fsPath).slice(1),
             isDirty: doc?.isDirty ?? tab.isDirty,
             isActive: uri.fsPath === activeUri,
+            type: 'file',
+          })
+        } else if (tab.input instanceof vscode.TabInputTextDiff) {
+          // For diffs (e.g. show_diff), modified may use a preview scheme — prefer original (the real file)
+          const uri = tab.input.original.scheme === 'file' ? tab.input.original
+            : tab.input.modified.scheme === 'file' ? tab.input.modified
+            : null
+          if (!uri) continue
+          const doc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === uri.fsPath)
+          tabs.push({
+            path: uri.fsPath,
+            relativePath: vscode.workspace.asRelativePath(uri),
+            language: doc?.languageId ?? path.extname(uri.fsPath).slice(1),
+            isDirty: doc?.isDirty ?? tab.isDirty,
+            isActive: uri.fsPath === activeUri,
+            type: 'diff',
           })
         }
       }
@@ -166,7 +156,7 @@ export class VsCodeBridge {
 
   // --- Diagnostics ---
 
-  getDiagnostics(filePath?: string): Array<DiagnosticItem> {
+  async getDiagnostics(filePath?: string): Promise<Array<DiagnosticItem>> {
     const severityMap: Record<number, DiagnosticItem['severity']> = {
       [vscode.DiagnosticSeverity.Error]: 'error',
       [vscode.DiagnosticSeverity.Warning]: 'warning',
@@ -174,9 +164,17 @@ export class VsCodeBridge {
       [vscode.DiagnosticSeverity.Hint]: 'hint',
     }
 
-    const allDiags = filePath
-      ? [[vscode.Uri.file(filePath), vscode.languages.getDiagnostics(vscode.Uri.file(filePath))] as [vscode.Uri, Array<vscode.Diagnostic>]]
-      : vscode.languages.getDiagnostics()
+    let allDiags: Array<[vscode.Uri, Array<vscode.Diagnostic>]>
+    if (filePath) {
+      const uri = vscode.Uri.file(filePath)
+      // Open the document to ensure the language server has analyzed it
+      await vscode.workspace.openTextDocument(uri)
+      // Give the language server a moment to produce diagnostics
+      await new Promise(resolve => setTimeout(resolve, 500))
+      allDiags = [[uri, vscode.languages.getDiagnostics(uri)]]
+    } else {
+      allDiags = vscode.languages.getDiagnostics() as Array<[vscode.Uri, Array<vscode.Diagnostic>]>
+    }
 
     const results: Array<DiagnosticItem> = []
     for (const [uri, diags] of allDiags) {
@@ -326,6 +324,28 @@ export class VsCodeBridge {
     await vscode.window.showTextDocument(doc, opts)
   }
 
+  async closeFile(filePath: string): Promise<{ closed: number }> {
+    const uri = vscode.Uri.file(filePath)
+    const tabsToClose: vscode.Tab[] = []
+
+    for (const group of vscode.window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (tab.input instanceof vscode.TabInputText && tab.input.uri.fsPath === uri.fsPath) {
+          tabsToClose.push(tab)
+        } else if (tab.input instanceof vscode.TabInputTextDiff) {
+          if (tab.input.original.fsPath === uri.fsPath || tab.input.modified.fsPath === uri.fsPath) {
+            tabsToClose.push(tab)
+          }
+        }
+      }
+    }
+
+    for (const tab of tabsToClose) {
+      await vscode.window.tabGroups.close(tab)
+    }
+    return { closed: tabsToClose.length }
+  }
+
   // --- Terminal ---
 
   async runCommand(command: string, cwd?: string, timeoutMs = 30000, strategy = 'childProcess'): Promise<TerminalResult> {
@@ -382,57 +402,6 @@ export class VsCodeBridge {
       name: vscode.workspace.name ?? null,
       rootPath: folders[0]?.uri.fsPath ?? null,
     }
-  }
-
-  // --- Git ---
-
-  private getGitRepo(): Repository | null {
-    const ext = vscode.extensions.getExtension<GitExtension>('vscode.git')
-    if (!ext?.isActive) return null
-    const api = ext.exports.getAPI(1)
-    return api.repositories[0] ?? null
-  }
-
-  async getGitStatus(): Promise<GitStatus | null> {
-    const repo = this.getGitRepo()
-    if (!repo) return null
-
-    const state = repo.state
-    const branch = state.HEAD?.name ?? 'unknown'
-    const upstream = state.HEAD?.upstream ? `${state.HEAD.upstream.remote}/${state.HEAD.upstream.name}` : null
-    const ahead = state.HEAD?.ahead ?? 0
-    const behind = state.HEAD?.behind ?? 0
-
-    const staged = state.indexChanges.map(c => ({
-      path: vscode.workspace.asRelativePath(vscode.Uri.file(c.uri.fsPath)),
-      status: statusToString(c.status),
-    }))
-
-    const unstaged = state.workingTreeChanges
-      .filter(c => c.status !== 7 /* UNTRACKED */)
-      .map(c => ({
-        path: vscode.workspace.asRelativePath(vscode.Uri.file(c.uri.fsPath)),
-        status: statusToString(c.status),
-      }))
-
-    const untracked = state.workingTreeChanges
-      .filter(c => c.status === 7 /* UNTRACKED */)
-      .map(c => vscode.workspace.asRelativePath(vscode.Uri.file(c.uri.fsPath)))
-
-    return { branch, upstream, ahead, behind, staged, unstaged, untracked }
-  }
-
-  async getGitDiff(filePath?: string, staged = false): Promise<string> {
-    const repo = this.getGitRepo()
-    if (!repo) return ''
-
-    if (filePath) {
-      return staged
-        ? repo.diffIndexWithHEAD(filePath)
-        : repo.diffWithHEAD(filePath)
-    }
-
-    return repo.diff(staged)
   }
 
   // --- Execute VS Code Command ---

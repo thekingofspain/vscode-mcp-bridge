@@ -1,6 +1,6 @@
 # VS Code MCP Bridge
 
-A VS Code extension that hosts a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) HTTP server, exposing your live IDE state to AI coding agents — active file, cursor position, LSP diagnostics, visual diffs, git status, and more.
+A VS Code extension that hosts a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) HTTP server, exposing your live IDE state to AI coding agents — active file, cursor position, LSP diagnostics, visual diffs, managed terminals, and more.
 
 ## Quickest way to get started
 
@@ -8,7 +8,7 @@ Just point your AI coding tool at this README and tell it to install the MCP for
 
 ## Features
 
-- **28 MCP tools** covering file I/O, LSP, git, terminal, and VS Code UI
+- **27 MCP tools** covering file I/O, LSP, terminal, and VS Code UI
 - **Visual diffs** — agents call `show_diff` to open a native VS Code diff editor before any file is written
 - **Live diagnostics** — exposes TypeScript, ESLint, and any other LSP errors to the agent in real time
 - **Context push** — automatically notifies connected agents when the active file or selection changes
@@ -67,6 +67,7 @@ The status bar item (bottom right) shows the current port and connected agent co
 | `create_file` | Create a new file |
 | `delete_file` | Delete a file (moves to trash by default) |
 | `open_file` | Open a file in the editor, optionally jump to a line |
+| `close_file` | Close a file tab (including diff tabs) |
 
 ### Language Server (LSP)
 | Tool | Description |
@@ -80,12 +81,6 @@ The status bar item (bottom right) shows the current port and connected agent co
 | `get_code_actions` | Available quick fixes and refactors for a range |
 | `apply_code_action` | Apply a code action by index |
 | `rename_symbol` | Rename a symbol and all references workspace-wide |
-
-### Git
-| Tool | Description |
-|---|---|
-| `get_git_status` | Current branch, staged and unstaged changes |
-| `get_git_diff` | Diff for a file or the entire repo (staged or unstaged) |
 
 ### Terminal
 | Tool | Description |

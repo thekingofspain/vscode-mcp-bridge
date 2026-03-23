@@ -4,6 +4,7 @@ import { ContextPusher } from './context/ContextPusher.js'
 import { HttpServer } from './server/HttpServer.js'
 import { TerminalManager } from './terminal/TerminalManager.js'
 import { Settings } from './config/Settings.js'
+import { log } from './utils/logger.js'
 
 let httpServer: HttpServer | undefined
 let statusBarItem: vscode.StatusBarItem | undefined
@@ -11,6 +12,11 @@ let contextPusher: ContextPusher | undefined
 let terminalManager: TerminalManager | undefined
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const outputChannel = vscode.window.createOutputChannel('MCP Bridge')
+  context.subscriptions.push(outputChannel)
+  log.init(outputChannel, 'debug')
+  log.info('Extension', 'Activating MCP Bridge extension')
+
   const settings = new Settings()
   const bridge = new VsCodeBridge()
 
@@ -35,16 +41,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // Terminal manager for long-running processes
   terminalManager = new TerminalManager()
+  log.info('Extension', `Terminal manager initialized (node-pty: ${terminalManager.hasPty ? 'available' : 'not available, using pipe fallback'})`)
 
   // Start HTTP server
   httpServer = new HttpServer(bridge, contextPusher, settings, terminalManager)
 
   async function startServer(): Promise<void> {
     try {
+      log.info('Server', `Starting HTTP server on port ${settings.port}`)
       const port = await httpServer!.start(settings.port)
       updateStatusBar(port, 0)
+      log.info('Server', `HTTP server listening on port ${port}`)
       vscode.window.showInformationMessage(`MCP Server running on http://127.0.0.1:${port}`)
     } catch (err) {
+      log.error('Server', `Failed to start HTTP server`, err)
       vscode.window.showErrorMessage(`MCP Server failed to start: ${err}`)
       updateStatusBar(0, 0, true)
     }
@@ -52,6 +62,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   async function stopServer(): Promise<void> {
     if (httpServer) {
+      log.info('Server', 'Stopping HTTP server')
       await httpServer.stop()
       updateStatusBar(0, 0)
       vscode.window.showInformationMessage('MCP Server stopped.')
@@ -138,6 +149,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
+  log.info('Extension', 'Deactivating MCP Bridge extension')
   terminalManager?.dispose()
   contextPusher?.stop()
   await httpServer?.stop()

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { VsCodeBridge } from '../bridge/VsCodeBridge.js'
 import { TerminalManager } from '../terminal/TerminalManager.js'
 import type { Settings } from '../config/Settings.js'
+import { log } from '../utils/logger.js'
 
 function symbolKindName(kind: number): string {
   const kinds = ['File','Module','Namespace','Package','Class','Method','Property','Field','Constructor',
@@ -22,7 +23,23 @@ function serializeSymbols(symbols: Array<{ name: string; kind: number; range: { 
   }))
 }
 
+// Wrap a tool handler with logging
+function logged<T, R>(toolName: string, handler: (args: T) => Promise<R>): (args: T) => Promise<R> {
+  return async (args: T) => {
+    log.debug('Tool', `${toolName} called`, args)
+    try {
+      const result = await handler(args)
+      log.debug('Tool', `${toolName} completed`)
+      return result
+    } catch (err) {
+      log.error('Tool', `${toolName} failed`, (err as Error).message)
+      throw err
+    }
+  }
+}
+
 export function registerTools(server: McpServer, bridge: VsCodeBridge, settings: Settings, terminalManager: TerminalManager): void {
+  log.info('Tools', `Registering tools (terminal manager pty: ${terminalManager.hasPty})`)
 
   // --- Active File ---
   server.tool('get_active_file', 'Get the currently active/open file in VS Code', {}, async () => {
@@ -51,7 +68,7 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       severity: z.enum(['error', 'warning', 'information', 'hint']).optional().describe('Filter by minimum severity'),
     },
     async ({ filePath, severity }) => {
-      let diags = bridge.getDiagnostics(filePath)
+      let diags = await bridge.getDiagnostics(filePath)
       if (severity) {
         const levels = ['hint', 'information', 'warning', 'error']
         const minLevel = levels.indexOf(severity)
@@ -147,6 +164,19 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
     async ({ filePath, line, character, preview }) => {
       await bridge.openFile(filePath, line, character, preview)
       return { content: [{ type: 'text', text: JSON.stringify({ opened: true, filePath }) }] }
+    }
+  )
+
+  // --- Close File ---
+  server.tool(
+    'close_file',
+    'Close a file tab in VS Code',
+    {
+      filePath: z.string().describe('Absolute path to the file to close'),
+    },
+    async ({ filePath }) => {
+      const result = await bridge.closeFile(filePath)
+      return { content: [{ type: 'text', text: JSON.stringify({ ...result, filePath }) }] }
     }
   )
 
@@ -351,26 +381,6 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
     return { content: [{ type: 'text', text: JSON.stringify(info) }] }
   })
 
-  // --- Git Status ---
-  server.tool('get_git_status', 'Get the current git status (branch, staged/unstaged changes)', {}, async () => {
-    const status = await bridge.getGitStatus()
-    return { content: [{ type: 'text', text: JSON.stringify(status) }] }
-  })
-
-  // --- Git Diff ---
-  server.tool(
-    'get_git_diff',
-    'Get the git diff for a file or the entire repo',
-    {
-      filePath: z.string().optional().describe('Absolute path to a specific file, or omit for all changes'),
-      staged: z.boolean().optional().default(false).describe('Get staged (index) diff instead of working tree diff'),
-    },
-    async ({ filePath, staged }) => {
-      const diff = await bridge.getGitDiff(filePath, staged)
-      return { content: [{ type: 'text', text: JSON.stringify({ diff }) }] }
-    }
-  )
-
   // --- Execute VS Code Command ---
   server.tool(
     'execute_vscode_command',
@@ -396,20 +406,20 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       command: z.string().optional().describe('Command to run immediately (e.g. "npm run dev"). Omit to just open a shell.'),
       cwd: z.string().optional().describe('Working directory (defaults to workspace root)'),
     },
-    async ({ name, command, cwd }) => {
+    logged('spawn_terminal', async ({ name, command, cwd }) => {
       const result = terminalManager.spawn(name, command, cwd)
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
-    }
+    })
   )
 
   server.tool(
     'list_terminals',
     'List all managed terminals and their status (alive/dead, PID, buffer size)',
     {},
-    async () => {
+    logged('list_terminals', async () => {
       const terminals = terminalManager.list()
       return { content: [{ type: 'text', text: JSON.stringify(terminals) }] }
-    }
+    })
   )
 
   server.tool(
@@ -419,11 +429,11 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       id: z.string().describe('Terminal ID (from spawn_terminal or list_terminals)'),
       lines: z.number().int().min(1).optional().describe('Number of lines to return from the end (default: all buffered output)'),
     },
-    async ({ id, lines }) => {
+    logged('read_terminal', async ({ id, lines }) => {
       const result = terminalManager.readOutput(id, lines)
       if (!result) throw new Error(`Terminal '${id}' not found`)
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
-    }
+    })
   )
 
   server.tool(
@@ -433,11 +443,11 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       id: z.string().describe('Terminal ID'),
       input: z.string().describe('Text to send to the terminal stdin'),
     },
-    async ({ id, input }) => {
+    logged('write_terminal', async ({ id, input }) => {
       const ok = terminalManager.write(id, input)
       if (!ok) throw new Error(`Terminal '${id}' not found or not alive`)
       return { content: [{ type: 'text', text: JSON.stringify({ sent: true }) }] }
-    }
+    })
   )
 
   server.tool(
@@ -447,10 +457,10 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       id: z.string().describe('Terminal ID'),
       signal: z.enum(['SIGTERM', 'SIGKILL', 'SIGINT']).optional().default('SIGTERM').describe('Signal to send'),
     },
-    async ({ id, signal }) => {
+    logged('kill_terminal', async ({ id, signal }) => {
       const ok = terminalManager.kill(id, signal as NodeJS.Signals)
       if (!ok) throw new Error(`Terminal '${id}' not found`)
       return { content: [{ type: 'text', text: JSON.stringify({ killed: true }) }] }
-    }
+    })
   )
 }

@@ -2,7 +2,7 @@
   "name": "vscode-mcp-bridge-ext",
   "displayName": "VS Code MCP Bridge",
   "description": "Bridges VS Code IDE features to AI coding agents via MCP",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "jhamama",
   "private": true,
   "engines": {
@@ -12,10 +12,20 @@
     "type": "git",
     "url": "https://github.com/jhamama/vscode-mcp-bridge"
   },
-  "categories": ["Other"],
-  "keywords": ["mcp", "ai", "agent", "lsp", "diagnostics"],
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "mcp",
+    "ai",
+    "agent",
+    "lsp",
+    "diagnostics"
+  ],
   "icon": "icon.png",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -38,13 +48,18 @@
         },
         "mcpServer.allowedCommands": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "VS Code commands allowed via execute_vscode_command tool (empty = none allowed)"
         },
         "mcpServer.terminalStrategy": {
           "type": "string",
-          "enum": ["childProcess", "shellIntegration"],
+          "enum": [
+            "childProcess",
+            "shellIntegration"
+          ],
           "default": "childProcess",
           "description": "How to run terminal commands. childProcess captures output reliably. shellIntegration shows in VS Code terminal (requires VS Code 1.93+)"
         }
@@ -83,6 +98,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.0",
+    "node-pty": "^1.1.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

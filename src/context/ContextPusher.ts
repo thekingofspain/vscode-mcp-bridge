@@ -60,11 +60,11 @@ export class ContextPusher {
     if (snap) this.emit('selection', snap)
   }
 
-  private pushDiagnostics(): void {
+  private async pushDiagnostics(): Promise<void> {
     // Only push diagnostics for open files
     const tabs = this.bridge.getOpenTabs()
     const paths = tabs.map(t => t.path)
-    const allDiags = this.bridge.getDiagnostics()
+    const allDiags = await this.bridge.getDiagnostics()
     const filtered = allDiags.filter(d => paths.includes(d.filePath))
     this.emit('diagnostics', filtered)
   }
