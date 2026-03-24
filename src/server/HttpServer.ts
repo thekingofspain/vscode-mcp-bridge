@@ -82,7 +82,7 @@ export class HttpServer {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({
         status: 'ok',
-        version: '0.2.3',
+        version: '0.2.4',
         connectedAgents: this.sessions.size,
         port: this.actualPort,
       }))
@@ -116,7 +116,7 @@ export class HttpServer {
 
     // Create a new McpServer per connection (SDK design requires this)
     const mcpServer = new McpServer(
-      { name: 'vscode-mcp-bridge', version: '0.2.3' },
+      { name: 'vscode-mcp-bridge', version: '0.2.4' },
       {
         instructions: `You are connected to a live VS Code instance. The following suggestions can help you get the most out of these tools:
 
@@ -155,11 +155,12 @@ GENERAL:
     )
     registerTools(mcpServer, this.bridge, this.settings, this.terminalManager)
 
-    // Wire context push events to this connection
+    // Wire context push events, but gate on initialization
+    let initialized = false
     const unsubscribePush = this.settings.enableContextPush
       ? this.pusher.onPush((type, payload) => {
+          if (!initialized) return
           try {
-            // Send as MCP log notification - agents can filter by data.type
             transport.send({
               jsonrpc: '2.0',
               method: 'notifications/message',
@@ -185,6 +186,8 @@ GENERAL:
       }
     })
 
+    // Start connection — enable push notifications after a delay to allow handshake to complete
+    setTimeout(() => { initialized = true }, 2000)
     await mcpServer.connect(transport)
   }
 
