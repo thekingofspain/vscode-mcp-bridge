@@ -37,7 +37,7 @@ export class TerminalManager {
         log.debug('Terminal', `Cleaned up stale log file: ${file}`)
       }
       if (files.length > 0) {
-        log.info('Terminal', `Cleaned up ${files.length} stale log file(s) from previous session`)
+        log.info('Terminal', `Cleaned up ${String(files.length)} stale log file(s) from previous session`)
       }
     } catch {
       // Ignore errors during cleanup
@@ -54,14 +54,14 @@ export class TerminalManager {
   }
 
   spawn(name: string, command?: string, cwd?: string): { id: string; name: string } {
-    const id = `term_${this.nextId++}`
+    const id = `term_${String(this.nextId++)}`
     const workingDir = cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd()
     const logFile = path.join(this.logDir, `${id}.log`)
     const displayName = name || `Task ${id}`
 
     // Launch script directly as the terminal shell so setup is invisible
     const isLinux = os.platform() === 'linux'
-    const shell = process.env.SHELL || '/bin/zsh'
+    const shell = process.env.SHELL ?? '/bin/zsh'
 
     // Use bash -c to set up trap and run script, which spawns the user's shell
     const setupCmd = isLinux
@@ -112,14 +112,14 @@ export class TerminalManager {
     return { id, name: displayName }
   }
 
-  list(): Array<{
+  list(): {
     id: string
     name: string
     alive: boolean
     cwd: string
     createdAt: number
     logSize: number
-  }> {
+  }[] {
     return Array.from(this.terminals.values()).map(t => ({
       id: t.id,
       name: t.name,
@@ -167,12 +167,12 @@ export class TerminalManager {
 
   write(id: string, input: string, addNewline = true): boolean {
     const managed = this.terminals.get(id)
-    if (!managed || !managed.alive) return false
+    if (!managed?.alive) return false
     managed.terminal.sendText(input, addNewline)
     return true
   }
 
-  kill(id: string, signal: NodeJS.Signals = 'SIGTERM'): boolean {
+  kill(id: string): boolean {
     const managed = this.terminals.get(id)
     if (!managed) return false
 

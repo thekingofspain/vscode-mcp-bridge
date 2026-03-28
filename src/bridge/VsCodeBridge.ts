@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
+import { exec } from 'child_process'
 
 export interface ActiveFileSnapshot {
   path: string
@@ -50,7 +51,7 @@ export interface TerminalResult {
 // In-memory file system provider for diff previews
 class MemoryFileSystemProvider implements vscode.FileSystemProvider {
   private files = new Map<string, Uint8Array>()
-  private _emitter = new vscode.EventEmitter<Array<vscode.FileChangeEvent>>()
+  private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>()
   readonly onDidChangeFile = this._emitter.event
 
   watch(): vscode.Disposable { return new vscode.Disposable(() => undefined) }
@@ -59,8 +60,8 @@ class MemoryFileSystemProvider implements vscode.FileSystemProvider {
     if (!data) throw vscode.FileSystemError.FileNotFound(uri)
     return { type: vscode.FileType.File, ctime: 0, mtime: Date.now(), size: data.byteLength }
   }
-  readDirectory(): Array<[string, vscode.FileType]> { return [] }
-  createDirectory(): void { }
+  readDirectory(): [string, vscode.FileType][] { return [] }
+  createDirectory(): void { return }
   readFile(uri: vscode.Uri): Uint8Array {
     const data = this.files.get(uri.path)
     if (!data) throw vscode.FileSystemError.FileNotFound(uri)
@@ -71,7 +72,7 @@ class MemoryFileSystemProvider implements vscode.FileSystemProvider {
     this._emitter.fire([{ type: vscode.FileChangeType.Changed, uri }])
   }
   delete(uri: vscode.Uri): void { this.files.delete(uri.path) }
-  rename(): void { }
+  rename(): void { return }
 }
 
 export class VsCodeBridge {
@@ -115,9 +116,9 @@ export class VsCodeBridge {
 
   // --- Open Tabs ---
 
-  getOpenTabs(): Array<OpenTab> {
+  getOpenTabs(): OpenTab[] {
     const activeUri = vscode.window.activeTextEditor?.document.uri.fsPath
-    const tabs: Array<OpenTab> = []
+    const tabs: OpenTab[] = []
 
     for (const group of vscode.window.tabGroups.all) {
       for (const tab of group.tabs) {
@@ -137,7 +138,7 @@ export class VsCodeBridge {
           // For diffs (e.g. show_diff), modified may use a preview scheme — prefer original (the real file)
           const uri = tab.input.original.scheme === 'file' ? tab.input.original
             : tab.input.modified.scheme === 'file' ? tab.input.modified
-            : null
+              : null
           if (!uri) continue
           const doc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === uri.fsPath)
           tabs.push({
@@ -161,7 +162,7 @@ export class VsCodeBridge {
     targetPath?: string;
     recursive?: boolean;
     severity?: string;
-  }): Promise<Array<DiagnosticItem>> {
+  }): Promise<DiagnosticItem[]> {
     const severityMap: Record<number, DiagnosticItem['severity']> = {
       [vscode.DiagnosticSeverity.Error]: 'error',
       [vscode.DiagnosticSeverity.Warning]: 'warning',
@@ -184,7 +185,7 @@ export class VsCodeBridge {
           const files = result.stdout.split('\n').map(f => f.trim()).filter(Boolean)
           urisToFilter = new Set(files.map(f => path.join(root, f)))
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     } else if (opts.scope === 'open_files') {
@@ -198,17 +199,17 @@ export class VsCodeBridge {
       }
     }
 
-    const allDiags = vscode.languages.getDiagnostics() as Array<[vscode.Uri, Array<vscode.Diagnostic>]>
+    const allDiags = vscode.languages.getDiagnostics()
     const levels = ['hint', 'information', 'warning', 'error']
     const minLevel = opts.severity ? levels.indexOf(opts.severity) : -1
 
-    const results: Array<DiagnosticItem> = []
+    const results: DiagnosticItem[] = []
     for (const [uri, diags] of allDiags) {
       if (uri.scheme !== 'file') continue
-      
+
       const fsPath = uri.fsPath
       if (urisToFilter && !urisToFilter.has(fsPath)) continue
-      
+
       if (opts.scope === 'folder' && opts.targetPath) {
         const rel = path.relative(opts.targetPath, fsPath)
         if (rel.startsWith('..')) continue // Not in target folder
@@ -216,7 +217,7 @@ export class VsCodeBridge {
       }
 
       for (const d of diags) {
-        const mappedSeverity = severityMap[d.severity] ?? 'information'
+        const mappedSeverity = severityMap[d.severity as keyof typeof severityMap] ?? 'information'
         if (minLevel >= 0 && levels.indexOf(mappedSeverity) < minLevel) continue
 
         results.push({
@@ -240,20 +241,20 @@ export class VsCodeBridge {
   async getRepoMap(dir?: string): Promise<string> {
     const root = dir ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
     if (!root) return 'No workspace root found.'
-    
-    const symbols = await vscode.commands.executeCommand<Array<vscode.SymbolInformation>>('vscode.executeWorkspaceSymbolProvider', '')
-    
-    if (!symbols || symbols.length === 0) {
+
+    const symbols = await vscode.commands.executeCommand<vscode.SymbolInformation[]>('vscode.executeWorkspaceSymbolProvider', '')
+
+    if (symbols.length === 0) {
       return 'No symbols found by LSP. This workspace may not have a language server capable of full-workspace symbols.'
     }
 
-    const fileMap = new Map<string, Array<vscode.SymbolInformation>>()
+    const fileMap = new Map<string, vscode.SymbolInformation[]>()
     for (const sym of symbols) {
       if (sym.location.uri.scheme !== 'file') continue
       const fsPath = sym.location.uri.fsPath
       if (!fsPath.startsWith(root)) continue
       const rel = path.relative(root, fsPath)
-      
+
       let arr = fileMap.get(rel)
       if (!arr) { arr = []; fileMap.set(rel, arr) }
       arr.push(sym)
@@ -263,17 +264,19 @@ export class VsCodeBridge {
     let out = `Repository Map for ${root}\n\n`
     for (const file of sortedFiles) {
       out += `${file}:\n`
-      const syms = fileMap.get(file)!
-      syms.sort((a,b) => a.location.range.start.line - b.location.range.start.line)
-      for (const s of syms) {
-        const kinds = ['File','Module','Namespace','Package','Class','Method','Property','Field','Constructor',
-        'Enum','Interface','Function','Variable','Constant','String','Number','Boolean','Array','Object',
-        'Key','Null','EnumMember','Struct','Event','Operator','TypeParameter']
-        const kindName = kinds[s.kind] ?? 'Unknown'
-        out += `  - [${kindName}] ${s.name} (Line ${s.location.range.start.line + 1})\n`
+      const syms = fileMap.get(file)
+      if (syms) {
+        syms.sort((a, b) => a.location.range.start.line - b.location.range.start.line)
+        for (const s of syms) {
+          const kinds = ['File', 'Module', 'Namespace', 'Package', 'Class', 'Method', 'Property', 'Field', 'Constructor',
+            'Enum', 'Interface', 'Function', 'Variable', 'Constant', 'String', 'Number', 'Boolean', 'Array', 'Object',
+            'Key', 'Null', 'EnumMember', 'Struct', 'Event', 'Operator', 'TypeParameter']
+          const kindName = kinds[s.kind] ?? 'Unknown'
+          out += `  - [${kindName}] ${s.name} (Line ${String(s.location.range.start.line + 1)})\n`
+        }
       }
     }
-    
+
     return out.slice(0, 500000)
   }
 
@@ -282,7 +285,7 @@ export class VsCodeBridge {
   async getReferences(filePath: string, line: number, char: number, includeDeclaration: boolean) {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
-    return vscode.commands.executeCommand<Array<vscode.Location>>(
+    return vscode.commands.executeCommand<vscode.Location[]>(
       'vscode.executeReferenceProvider', uri, pos, { includeDeclaration }
     )
   }
@@ -290,7 +293,7 @@ export class VsCodeBridge {
   async getDefinition(filePath: string, line: number, char: number) {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
-    return vscode.commands.executeCommand<Array<vscode.Location | vscode.LocationLink>>(
+    return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
       'vscode.executeDefinitionProvider', uri, pos
     )
   }
@@ -298,7 +301,7 @@ export class VsCodeBridge {
   async getTypeDefinition(filePath: string, line: number, char: number) {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
-    return vscode.commands.executeCommand<Array<vscode.Location | vscode.LocationLink>>(
+    return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
       'vscode.executeTypeDefinitionProvider', uri, pos
     )
   }
@@ -306,7 +309,7 @@ export class VsCodeBridge {
   async getImplementation(filePath: string, line: number, char: number) {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
-    return vscode.commands.executeCommand<Array<vscode.Location | vscode.LocationLink>>(
+    return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
       'vscode.executeImplementationProvider', uri, pos
     )
   }
@@ -314,12 +317,12 @@ export class VsCodeBridge {
   async getHover(filePath: string, line: number, char: number) {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
-    return vscode.commands.executeCommand<Array<vscode.Hover>>(
+    return vscode.commands.executeCommand<vscode.Hover[]>(
       'vscode.executeHoverProvider', uri, pos
     )
   }
 
-  async getSignatureHelp(filePath: string, line: number, char: number, triggerCharacter?: string) {
+  async getSignatureHelp(filePath: string, line: number, char: number, triggerCharacter?: string): Promise<vscode.SignatureHelp | undefined> {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
     return vscode.commands.executeCommand<vscode.SignatureHelp>(
@@ -335,15 +338,15 @@ export class VsCodeBridge {
     )
   }
 
-  async getCodeActions(filePath: string, startLine: number, startChar: number, endLine: number, endChar: number) {
+  async getCodeActions(filePath: string, startLine: number, startChar: number, endLine: number, endChar: number): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> {
     const uri = vscode.Uri.file(filePath)
     const range = new vscode.Range(startLine, startChar, endLine, endChar)
-    return vscode.commands.executeCommand<Array<vscode.Command | vscode.CodeAction>>(
+    return vscode.commands.executeCommand<(vscode.Command | vscode.CodeAction)[]>(
       'vscode.executeCodeActionProvider', uri, range
     )
   }
 
-  async getRenameEdits(filePath: string, line: number, char: number, newName: string) {
+  async getRenameEdits(filePath: string, line: number, char: number, newName: string): Promise<vscode.WorkspaceEdit | undefined> {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
     return vscode.commands.executeCommand<vscode.WorkspaceEdit>(
@@ -353,20 +356,20 @@ export class VsCodeBridge {
 
   async getDocumentSymbols(filePath: string) {
     const uri = vscode.Uri.file(filePath)
-    return vscode.commands.executeCommand<Array<vscode.DocumentSymbol>>(
+    return vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
       'vscode.executeDocumentSymbolProvider', uri
     )
   }
 
   async getWorkspaceSymbols(query: string) {
-    return vscode.commands.executeCommand<Array<vscode.SymbolInformation>>(
+    return vscode.commands.executeCommand<vscode.SymbolInformation[]>(
       'vscode.executeWorkspaceSymbolProvider', query
     )
   }
 
   // --- Window UI ---
 
-  async showMessage(message: string, level = 'info', items: Array<string> = []): Promise<string | undefined> {
+  async showMessage(message: string, level = 'info', items: string[] = []): Promise<string | undefined> {
     if (level === 'error') {
       return items.length > 0 ? vscode.window.showErrorMessage(message, ...items) : vscode.window.showErrorMessage(message)
     } else if (level === 'warning') {
@@ -375,11 +378,11 @@ export class VsCodeBridge {
     return items.length > 0 ? vscode.window.showInformationMessage(message, ...items) : vscode.window.showInformationMessage(message)
   }
 
-  async showQuickPick(items: Array<string>, placeHolder?: string, canPickMany = false): Promise<Array<string> | undefined> {
+  async showQuickPick(items: string[], placeHolder?: string, canPickMany = false): Promise<string[] | undefined> {
     const result = await vscode.window.showQuickPick(items, { placeHolder, canPickMany })
     if (!result) return undefined
-    if (Array.isArray(result)) return result as Array<string>
-    return [result as string]
+    if (Array.isArray(result)) return result as string[]
+    return [result]
   }
 
   async requestInput(prompt: string, placeHolder?: string, value?: string): Promise<string | undefined> {
@@ -441,7 +444,7 @@ export class VsCodeBridge {
     await vscode.workspace.applyEdit(edit)
   }
 
-  async deleteFile(filePath: string, useTrash = true): Promise<void> {
+  async deleteFile(filePath: string): Promise<void> {
     const uri = vscode.Uri.file(filePath)
     const edit = new vscode.WorkspaceEdit()
     edit.deleteFile(uri, { recursive: false, ignoreIfNotExists: false })
@@ -494,11 +497,10 @@ export class VsCodeBridge {
 
   private runViaChildProcess(command: string, cwd: string, timeoutMs: number): Promise<TerminalResult> {
     return new Promise((resolve, reject) => {
-      const { exec } = require('child_process') as typeof import('child_process')
       const proc = exec(command, { cwd, timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
         resolve({
-          stdout: stdout ?? '',
-          stderr: stderr ?? '',
+          stdout: stdout,
+          stderr: stderr,
           exitCode: err?.code ?? 0,
         })
       })
@@ -515,7 +517,7 @@ export class VsCodeBridge {
       const timeout = setTimeout(() => {
         disposable.dispose()
         terminal.dispose()
-        reject(new Error(`Command timed out after ${timeoutMs}ms`))
+        reject(new Error(`Command timed out after ${String(timeoutMs)}ms`))
       }, timeoutMs)
 
       const disposable = vscode.window.onDidEndTerminalShellExecution((e) => {
@@ -541,7 +543,7 @@ export class VsCodeBridge {
 
   // --- Execute VS Code Command ---
 
-  async executeCommand(command: string, args: Array<unknown> = [], allowedCommands: Array<string> = []): Promise<unknown> {
+  async executeCommand(command: string, args: unknown[] = [], allowedCommands: string[] = []): Promise<unknown> {
     if (allowedCommands.length > 0 && !allowedCommands.includes(command)) {
       throw new Error(`Command '${command}' is not in the allowed commands list`)
     }
@@ -549,16 +551,16 @@ export class VsCodeBridge {
   }
 
   // --- Editor Decorations ---
-  
-  private decorationTypes: Map<string, vscode.TextEditorDecorationType> = new Map()
+
+  private decorationTypes = new Map<string, vscode.TextEditorDecorationType>()
 
   async addEditorDecoration(filePath: string, startLine: number, endLine: number, color = 'rgba(255, 255, 0, 0.3)'): Promise<boolean> {
     let editor = vscode.window.activeTextEditor
-    if (!editor || editor.document.uri.fsPath !== filePath) {
+    if (editor?.document.uri.fsPath !== filePath) {
       await this.openFile(filePath, startLine, 0)
       editor = vscode.window.activeTextEditor
     }
-    if (!editor || editor.document.uri.fsPath !== filePath) return false
+    if (editor?.document.uri.fsPath !== filePath) return false
 
     let decType = this.decorationTypes.get(color)
     if (!decType) {
@@ -579,7 +581,7 @@ export class VsCodeBridge {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
     if (!root) return { success: false, output: 'No workspace root found.' }
 
-    let cmd = ''
+    let cmd: string
     if (operation === 'status') cmd = 'git status'
     else if (operation === 'commit') {
       if (!commitMessage) return { success: false, output: 'Commit message is required.' }
@@ -598,8 +600,8 @@ export class VsCodeBridge {
     try {
       const res = await this.runCommand(cmd, root)
       return { success: res.exitCode === 0, output: res.stdout || res.stderr }
-    } catch (e: any) {
-      return { success: false, output: e.message }
+    } catch (e) {
+      return { success: false, output: e instanceof Error ? e.message : String(e) }
     }
   }
 }

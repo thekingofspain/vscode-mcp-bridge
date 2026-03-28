@@ -1,6 +1,7 @@
 import * as http from 'http'
+import { randomUUID } from 'crypto'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { VsCodeBridge } from '../bridge/VsCodeBridge.js'
 import { ContextPusher } from '../context/ContextPusher.js'
 import { TerminalManager } from '../terminal/TerminalManager.js'
@@ -9,7 +10,7 @@ import type { Settings } from '../config/Settings.js'
 import { log } from '../utils/logger.js'
 
 interface SessionEntry {
-  transport: SSEServerTransport
+  transport: StreamableHTTPServerTransport
   unsubscribePush: () => void
 }
 
@@ -24,7 +25,7 @@ export class HttpServer {
     private settings: Settings,
     private terminalManager: TerminalManager,
   ) {
-    this.httpServer = http.createServer(this.handleRequest.bind(this))
+    this.httpServer = http.createServer((req, res) => { void this.handleRequest(req, res) })
   }
 
   get connectionCount(): number {
@@ -40,7 +41,7 @@ export class HttpServer {
       const port = preferredPort + attempt
       try {
         await new Promise<void>((resolve, reject) => {
-          this.httpServer.listen(port, '127.0.0.1', () => resolve())
+          this.httpServer.listen(port, '127.0.0.1', () => { resolve(); })
           this.httpServer.once('error', reject)
         })
         this.actualPort = port
@@ -49,7 +50,7 @@ export class HttpServer {
         if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw err
       }
     }
-    throw new Error(`Could not bind to any port in range ${preferredPort}-${preferredPort + 4}`)
+    throw new Error(`Could not bind to any port in range ${String(preferredPort)}-${String(preferredPort + 4)}`)
   }
 
   async stop(): Promise<void> {
@@ -57,13 +58,13 @@ export class HttpServer {
       session.unsubscribePush()
     }
     this.sessions.clear()
-    await new Promise<void>((resolve) => this.httpServer.close(() => resolve()))
+    await new Promise<void>((resolve) => this.httpServer.close(() => { resolve(); }))
   }
 
   private checkAuth(req: http.IncomingMessage): boolean {
     const token = this.settings.authToken
     if (!token) return true
-    const header = req.headers['authorization'] ?? ''
+    const header = req.headers.authorization ?? ''
     return header === `Bearer ${token}`
   }
 
@@ -90,7 +91,7 @@ export class HttpServer {
     }
 
     if (!this.checkAuth(req)) {
-      log.warn('Server', `Unauthorized request to ${req.url}`)
+      log.warn('Server', `Unauthorized request to ${String(req.url)}`)
       res.writeHead(401, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Unauthorized' }))
       return
@@ -111,8 +112,10 @@ export class HttpServer {
   }
 
   private async handleSse(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    const transport = new SSEServerTransport('/messages', res)
-    const sessionId = transport.sessionId
+    const sessionId = randomUUID()
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => sessionId
+    })
 
     // Create a new McpServer per connection (SDK design requires this)
     const mcpServer = new McpServer(
@@ -175,24 +178,25 @@ GENERAL:
       : () => undefined
 
     this.sessions.set(sessionId, { transport, unsubscribePush })
-    log.info('Server', `SSE session connected: ${sessionId} (total: ${this.sessions.size})`)
+    log.info('Server', `SSE session connected: ${sessionId} (total: ${String(this.sessions.size)})`)
 
     req.on('close', () => {
       const session = this.sessions.get(sessionId)
       if (session) {
         session.unsubscribePush()
         this.sessions.delete(sessionId)
-        log.info('Server', `SSE session disconnected: ${sessionId} (total: ${this.sessions.size})`)
+        log.info('Server', `SSE session disconnected: ${sessionId} (total: ${String(this.sessions.size)})`)
       }
     })
 
     // Start connection — enable push notifications after a delay to allow handshake to complete
     setTimeout(() => { initialized = true }, 2000)
     await mcpServer.connect(transport)
+    await transport.handleRequest(req, res)
   }
 
   private async handleMessages(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    const url = new URL(req.url!, `http://localhost`)
+    const url = new URL(req.url ?? '', `http://localhost`)
     const sessionId = url.searchParams.get('sessionId') ?? ''
     const session = this.sessions.get(sessionId)
 
@@ -203,6 +207,6 @@ GENERAL:
       return
     }
 
-    await session.transport.handlePostMessage(req, res)
+    await session.transport.handleRequest(req, res)
   }
 }

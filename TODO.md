@@ -30,3 +30,4 @@ New tools that would significantly enhance the intelligence and agency of connec
 - [ ] **Git Native Integration**: Dedicated tools for `git commit`, `git checkout`, and branch management without manual shell commands.
 - [ ] **Output Channel Bridge**: Allow agents to "tail" specific output channels like "TypeScript" or "Prettier" for background logs.
 - [ ] **Global Repo Mapping**: Implement a `get_repo_map` tool that provides a ranked, token-optimized summary of the whole project (similar to Aider's `repomap`) using LSP symbol data and dependency graph analysis.
+- [ ] **Direct AST Access Capability**: Investigate extracting and exposing raw Abstract Syntax Trees directly into the plugin, leveraging VS Code LSP or an equivalent parsing layer to provide deep structural context to agents.

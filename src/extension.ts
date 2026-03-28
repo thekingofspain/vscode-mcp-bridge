@@ -48,14 +48,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   async function startServer(): Promise<void> {
     try {
-      log.info('Server', `Starting HTTP server on port ${settings.port}`)
-      const port = await httpServer!.start(settings.port)
+      log.info('Server', `Starting HTTP server on port ${String(settings.port)}`)
+      if (!httpServer) return
+      const port = await httpServer.start(settings.port)
       updateStatusBar(port, 0)
-      log.info('Server', `HTTP server listening on port ${port}`)
-      vscode.window.showInformationMessage(`MCP Server running on http://127.0.0.1:${port}`)
+      log.info('Server', `HTTP server listening on port ${String(port)}`)
+      vscode.window.showInformationMessage(`MCP Server running on http://127.0.0.1:${String(port)}`)
     } catch (err) {
       log.error('Server', `Failed to start HTTP server`, err)
-      vscode.window.showErrorMessage(`MCP Server failed to start: ${err}`)
+      vscode.window.showErrorMessage(`MCP Server failed to start: ${String(err)}`)
       updateStatusBar(0, 0, true)
     }
   }
@@ -80,8 +81,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       statusBarItem.tooltip = 'MCP Server is stopped. Click to start.'
       statusBarItem.backgroundColor = undefined
     } else {
-      statusBarItem.text = `$(radio-tower) MCP :${port}${agents > 0 ? ` | ${agents} agent${agents !== 1 ? 's' : ''}` : ''}`
-      statusBarItem.tooltip = `MCP Server running on port ${port}. Click for options.`
+      statusBarItem.text = `$(radio-tower) MCP :${String(port)}${agents > 0 ? ` | ${String(agents)} agent${agents !== 1 ? 's' : ''}` : ''}`
+      statusBarItem.tooltip = `MCP Server running on port ${String(port)}. Click for options.`
       statusBarItem.backgroundColor = undefined
     }
     statusBarItem.show()
@@ -107,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.window.showWarningMessage('MCP Server is not running.')
         return
       }
-      const url = `http://127.0.0.1:${httpServer.port}/sse`
+      const url = `http://127.0.0.1:${String(httpServer.port)}/sse`
       await vscode.env.clipboard.writeText(url)
       vscode.window.showInformationMessage(`Copied: ${url}`)
     }),
@@ -117,10 +118,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (choice === 'Start Server') await startServer()
         return
       }
-      const url = `http://127.0.0.1:${httpServer.port}/sse`
+      const url = `http://127.0.0.1:${String(httpServer.port)}/sse`
       const choice = await vscode.window.showQuickPick(
-        [`Connected agents: ${httpServer.connectionCount}`, 'Copy connection URL', 'Stop server'],
-        { placeHolder: `MCP Server on port ${httpServer.port}` }
+        [`Connected agents: ${String(httpServer.connectionCount)}`, 'Copy connection URL', 'Stop server'],
+        { placeHolder: `MCP Server on port ${String(httpServer.port)}` }
       )
       if (choice === 'Copy connection URL') {
         await vscode.env.clipboard.writeText(url)
@@ -133,14 +134,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // Restart server if settings change
   context.subscriptions.push(
-    settings.onChange(async () => {
-      await stopServer()
-      if (settings.enableContextPush) {
-        contextPusher?.start()
-      } else {
-        contextPusher?.stop()
-      }
-      await startServer()
+    settings.onChange(() => {
+      void (async () => {
+        await stopServer()
+        if (settings.enableContextPush) {
+          contextPusher?.start()
+        } else {
+          contextPusher?.stop()
+        }
+        await startServer()
+      })()
     })
   )
 

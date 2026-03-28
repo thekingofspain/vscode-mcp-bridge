@@ -94,17 +94,22 @@
     "build:prod": "node esbuild.config.js --production",
     "watch": "node esbuild.config.js --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck && npx eslint .",
     "package": "vsce package"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.10.0",
-    "zod": "^3.23.0"
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/vscode": "^1.93.0",
-    "@vscode/vsce": "^3.0.0",
-    "esbuild": "^0.24.0",
-    "typescript": "^5.5.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.110.0",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.27.4",
+    "eslint": "^10.1.0",
+    "ts-morph": "^27.0.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.57.2"
   }
 }

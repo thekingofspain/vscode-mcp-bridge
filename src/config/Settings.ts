@@ -1,20 +1,20 @@
 import * as vscode from 'vscode'
 
 export class Settings {
-  get<T>(key: string): T | undefined {
-    return vscode.workspace.getConfiguration('mcpServer').get<T>(key)
+  get(key: string): unknown {
+    return vscode.workspace.getConfiguration('mcpServer').get(key)
   }
 
   get port(): number {
-    return this.get<number>('port') ?? 3333
+    return this.get('port') as number
   }
 
   get enableContextPush(): boolean {
-    return this.get<boolean>('enableContextPush') ?? true
+    return this.get('enableContextPush') as boolean
   }
 
   get authToken(): string {
-    return this.get<string>('authToken') ?? ''
+    return this.get('authToken') as string
   }
 
   onChange(cb: () => void): vscode.Disposable {

@@ -3,33 +3,33 @@ import { VsCodeBridge } from '../bridge/VsCodeBridge.js'
 
 type PushCallback = (type: string, payload: unknown) => void
 
-function debounce<T extends Array<unknown>>(fn: (...args: T) => void, ms: number): (...args: T) => void {
+function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (...args: T) => void {
   let timer: ReturnType<typeof setTimeout>
   return (...args: T) => {
     clearTimeout(timer)
-    timer = setTimeout(() => fn(...args), ms)
+    timer = setTimeout(() => { fn(...args); }, ms)
   }
 }
 
 export class ContextPusher {
-  private disposables: Array<vscode.Disposable> = []
-  private callbacks: Set<PushCallback> = new Set()
+  private disposables: vscode.Disposable[] = []
+  private callbacks = new Set<PushCallback>()
 
   constructor(private bridge: VsCodeBridge) {}
 
   start(): void {
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(
-        debounce(() => this.pushActiveFile(), 200)
+        debounce(() => { this.pushActiveFile(); }, 200)
       ),
       vscode.window.onDidChangeTextEditorSelection(
-        debounce(() => this.pushSelection(), 300)
+        debounce(() => { this.pushSelection(); }, 300)
       ),
       vscode.languages.onDidChangeDiagnostics(
-        debounce(() => this.pushDiagnostics(), 500)
+        debounce(() => { void this.pushDiagnostics() }, 500)
       ),
       vscode.workspace.onDidSaveTextDocument(
-        () => this.pushActiveFile()
+        () => { this.pushActiveFile(); }
       ),
     )
   }
