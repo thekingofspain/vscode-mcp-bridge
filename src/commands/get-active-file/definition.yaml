@@ -1,0 +1,38 @@
+tool: get_active_file
+description: Get the currently active/open file in VS Code
+category: editor
+version: 1.0.0
+stability: stable
+
+input: {}
+
+output:
+  type: object
+  properties:
+    path: string
+    relativePath: string
+    content: string
+    language: string
+    isDirty: boolean
+    lineCount: number
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/documents.getActiveFileSnapshot
+
+examples:
+  - name: Get current file
+    description: Get the content and metadata of the currently active editor
+    input: {}
+
+metadata:
+  created: 2024-01-15
+  lastUpdated: 2025-03-28
+  author: '@jhamama'
+  relatedTools:
+    - get_selection
+    - get_open_tabs
+    - read_file
