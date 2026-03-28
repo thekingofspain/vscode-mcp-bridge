@@ -156,7 +156,12 @@ export class VsCodeBridge {
 
   // --- Diagnostics ---
 
-  async getDiagnostics(filePath?: string): Promise<Array<DiagnosticItem>> {
+  async getDiagnostics(opts: {
+    scope: 'open_files' | 'workspace' | 'git_delta' | 'folder' | 'file';
+    targetPath?: string;
+    recursive?: boolean;
+    severity?: string;
+  }): Promise<Array<DiagnosticItem>> {
     const severityMap: Record<number, DiagnosticItem['severity']> = {
       [vscode.DiagnosticSeverity.Error]: 'error',
       [vscode.DiagnosticSeverity.Warning]: 'warning',
@@ -164,25 +169,59 @@ export class VsCodeBridge {
       [vscode.DiagnosticSeverity.Hint]: 'hint',
     }
 
-    let allDiags: Array<[vscode.Uri, Array<vscode.Diagnostic>]>
-    if (filePath) {
-      const uri = vscode.Uri.file(filePath)
-      // Open the document to ensure the language server has analyzed it
+    let urisToFilter: Set<string> | null = null
+
+    if (opts.scope === 'file' && opts.targetPath) {
+      const uri = vscode.Uri.file(opts.targetPath)
       await vscode.workspace.openTextDocument(uri)
-      // Give the language server a moment to produce diagnostics
       await new Promise(resolve => setTimeout(resolve, 500))
-      allDiags = [[uri, vscode.languages.getDiagnostics(uri)]]
-    } else {
-      allDiags = vscode.languages.getDiagnostics() as Array<[vscode.Uri, Array<vscode.Diagnostic>]>
+      urisToFilter = new Set([uri.fsPath])
+    } else if (opts.scope === 'git_delta') {
+      try {
+        const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+        if (root) {
+          const result = await this.runCommand('git diff --name-only && git ls-files --others --exclude-standard', root)
+          const files = result.stdout.split('\n').map(f => f.trim()).filter(Boolean)
+          urisToFilter = new Set(files.map(f => path.join(root, f)))
+        }
+      } catch (e) {
+        // ignore
+      }
+    } else if (opts.scope === 'open_files') {
+      urisToFilter = new Set()
+      for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+          if (tab.input instanceof vscode.TabInputText) {
+            urisToFilter.add(tab.input.uri.fsPath)
+          }
+        }
+      }
     }
+
+    const allDiags = vscode.languages.getDiagnostics() as Array<[vscode.Uri, Array<vscode.Diagnostic>]>
+    const levels = ['hint', 'information', 'warning', 'error']
+    const minLevel = opts.severity ? levels.indexOf(opts.severity) : -1
 
     const results: Array<DiagnosticItem> = []
     for (const [uri, diags] of allDiags) {
       if (uri.scheme !== 'file') continue
+      
+      const fsPath = uri.fsPath
+      if (urisToFilter && !urisToFilter.has(fsPath)) continue
+      
+      if (opts.scope === 'folder' && opts.targetPath) {
+        const rel = path.relative(opts.targetPath, fsPath)
+        if (rel.startsWith('..')) continue // Not in target folder
+        if (opts.recursive === false && rel.includes(path.sep)) continue // Nested folder
+      }
+
       for (const d of diags) {
+        const mappedSeverity = severityMap[d.severity] ?? 'information'
+        if (minLevel >= 0 && levels.indexOf(mappedSeverity) < minLevel) continue
+
         results.push({
-          filePath: uri.fsPath,
-          severity: severityMap[d.severity] ?? 'information',
+          filePath: fsPath,
+          severity: mappedSeverity,
           message: d.message,
           source: d.source ?? '',
           code: typeof d.code === 'object' ? String(d.code.value) : (d.code ?? null),
@@ -194,6 +233,48 @@ export class VsCodeBridge {
       }
     }
     return results
+  }
+
+  // --- Repo Map ---
+
+  async getRepoMap(dir?: string): Promise<string> {
+    const root = dir ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+    if (!root) return 'No workspace root found.'
+    
+    const symbols = await vscode.commands.executeCommand<Array<vscode.SymbolInformation>>('vscode.executeWorkspaceSymbolProvider', '')
+    
+    if (!symbols || symbols.length === 0) {
+      return 'No symbols found by LSP. This workspace may not have a language server capable of full-workspace symbols.'
+    }
+
+    const fileMap = new Map<string, Array<vscode.SymbolInformation>>()
+    for (const sym of symbols) {
+      if (sym.location.uri.scheme !== 'file') continue
+      const fsPath = sym.location.uri.fsPath
+      if (!fsPath.startsWith(root)) continue
+      const rel = path.relative(root, fsPath)
+      
+      let arr = fileMap.get(rel)
+      if (!arr) { arr = []; fileMap.set(rel, arr) }
+      arr.push(sym)
+    }
+
+    const sortedFiles = Array.from(fileMap.keys()).sort()
+    let out = `Repository Map for ${root}\n\n`
+    for (const file of sortedFiles) {
+      out += `${file}:\n`
+      const syms = fileMap.get(file)!
+      syms.sort((a,b) => a.location.range.start.line - b.location.range.start.line)
+      for (const s of syms) {
+        const kinds = ['File','Module','Namespace','Package','Class','Method','Property','Field','Constructor',
+        'Enum','Interface','Function','Variable','Constant','String','Number','Boolean','Array','Object',
+        'Key','Null','EnumMember','Struct','Event','Operator','TypeParameter']
+        const kindName = kinds[s.kind] ?? 'Unknown'
+        out += `  - [${kindName}] ${s.name} (Line ${s.location.range.start.line + 1})\n`
+      }
+    }
+    
+    return out.slice(0, 500000)
   }
 
   // --- LSP Commands ---
@@ -214,11 +295,43 @@ export class VsCodeBridge {
     )
   }
 
+  async getTypeDefinition(filePath: string, line: number, char: number) {
+    const uri = vscode.Uri.file(filePath)
+    const pos = new vscode.Position(line, char)
+    return vscode.commands.executeCommand<Array<vscode.Location | vscode.LocationLink>>(
+      'vscode.executeTypeDefinitionProvider', uri, pos
+    )
+  }
+
+  async getImplementation(filePath: string, line: number, char: number) {
+    const uri = vscode.Uri.file(filePath)
+    const pos = new vscode.Position(line, char)
+    return vscode.commands.executeCommand<Array<vscode.Location | vscode.LocationLink>>(
+      'vscode.executeImplementationProvider', uri, pos
+    )
+  }
+
   async getHover(filePath: string, line: number, char: number) {
     const uri = vscode.Uri.file(filePath)
     const pos = new vscode.Position(line, char)
     return vscode.commands.executeCommand<Array<vscode.Hover>>(
       'vscode.executeHoverProvider', uri, pos
+    )
+  }
+
+  async getSignatureHelp(filePath: string, line: number, char: number, triggerCharacter?: string) {
+    const uri = vscode.Uri.file(filePath)
+    const pos = new vscode.Position(line, char)
+    return vscode.commands.executeCommand<vscode.SignatureHelp>(
+      'vscode.executeSignatureHelpProvider', uri, pos, triggerCharacter
+    )
+  }
+
+  async getCompletions(filePath: string, line: number, char: number, triggerCharacter?: string) {
+    const uri = vscode.Uri.file(filePath)
+    const pos = new vscode.Position(line, char)
+    return vscode.commands.executeCommand<vscode.CompletionList>(
+      'vscode.executeCompletionItemProvider', uri, pos, triggerCharacter
     )
   }
 
@@ -249,6 +362,28 @@ export class VsCodeBridge {
     return vscode.commands.executeCommand<Array<vscode.SymbolInformation>>(
       'vscode.executeWorkspaceSymbolProvider', query
     )
+  }
+
+  // --- Window UI ---
+
+  async showMessage(message: string, level = 'info', items: Array<string> = []): Promise<string | undefined> {
+    if (level === 'error') {
+      return items.length > 0 ? vscode.window.showErrorMessage(message, ...items) : vscode.window.showErrorMessage(message)
+    } else if (level === 'warning') {
+      return items.length > 0 ? vscode.window.showWarningMessage(message, ...items) : vscode.window.showWarningMessage(message)
+    }
+    return items.length > 0 ? vscode.window.showInformationMessage(message, ...items) : vscode.window.showInformationMessage(message)
+  }
+
+  async showQuickPick(items: Array<string>, placeHolder?: string, canPickMany = false): Promise<Array<string> | undefined> {
+    const result = await vscode.window.showQuickPick(items, { placeHolder, canPickMany })
+    if (!result) return undefined
+    if (Array.isArray(result)) return result as Array<string>
+    return [result as string]
+  }
+
+  async requestInput(prompt: string, placeHolder?: string, value?: string): Promise<string | undefined> {
+    return vscode.window.showInputBox({ prompt, placeHolder, value })
   }
 
   // --- Diff Editor ---
@@ -411,5 +546,60 @@ export class VsCodeBridge {
       throw new Error(`Command '${command}' is not in the allowed commands list`)
     }
     return vscode.commands.executeCommand(command, ...args)
+  }
+
+  // --- Editor Decorations ---
+  
+  private decorationTypes: Map<string, vscode.TextEditorDecorationType> = new Map()
+
+  async addEditorDecoration(filePath: string, startLine: number, endLine: number, color = 'rgba(255, 255, 0, 0.3)'): Promise<boolean> {
+    let editor = vscode.window.activeTextEditor
+    if (!editor || editor.document.uri.fsPath !== filePath) {
+      await this.openFile(filePath, startLine, 0)
+      editor = vscode.window.activeTextEditor
+    }
+    if (!editor || editor.document.uri.fsPath !== filePath) return false
+
+    let decType = this.decorationTypes.get(color)
+    if (!decType) {
+      decType = vscode.window.createTextEditorDecorationType({ backgroundColor: color })
+      this.decorationTypes.set(color, decType)
+    }
+
+    const range = new vscode.Range(startLine, 0, endLine, Number.MAX_SAFE_INTEGER)
+    // We add to existing instead of clearing, but for simplicity we just set it. 
+    // Usually extending would require reading existing ranges.
+    editor.setDecorations(decType, [range])
+    return true
+  }
+
+  // --- Git Actions ---
+
+  async gitAction(operation: string, branchName?: string, commitMessage?: string): Promise<{ success: boolean; output: string }> {
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+    if (!root) return { success: false, output: 'No workspace root found.' }
+
+    let cmd = ''
+    if (operation === 'status') cmd = 'git status'
+    else if (operation === 'commit') {
+      if (!commitMessage) return { success: false, output: 'Commit message is required.' }
+      cmd = `git commit -m "${commitMessage.replace(/"/g, '\\"')}"`
+    }
+    else if (operation === 'checkout') {
+      if (!branchName) return { success: false, output: 'Branch name is required.' }
+      cmd = `git checkout ${branchName}`
+    }
+    else if (operation === 'branch') {
+      if (!branchName) return { success: false, output: 'Branch name is required.' }
+      cmd = `git branch ${branchName}`
+    }
+    else return { success: false, output: `Unknown operation: ${operation}` }
+
+    try {
+      const res = await this.runCommand(cmd, root)
+      return { success: res.exitCode === 0, output: res.stdout || res.stderr }
+    } catch (e: any) {
+      return { success: false, output: e.message }
+    }
   }
 }

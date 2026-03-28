@@ -62,19 +62,29 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
   // --- Diagnostics ---
   server.tool(
     'get_diagnostics',
-    'Get LSP diagnostics (errors, warnings, hints) from VS Code language servers',
+    'Get LSP diagnostics with expanded filtering options (Git delta, recursive folders)',
     {
-      filePath: z.string().optional().describe('Absolute path to a specific file, or omit for all open files'),
+      scope: z.enum(['open_files', 'workspace', 'git_delta', 'folder', 'file']).describe('Filtering scope for diagnostics'),
+      targetPath: z.string().optional().describe('Absolute path to a specific file or folder (required if scope is file or folder)'),
+      recursive: z.boolean().optional().default(true).describe('Recursive folder search (if scope is folder)'),
       severity: z.enum(['error', 'warning', 'information', 'hint']).optional().describe('Filter by minimum severity'),
     },
-    async ({ filePath, severity }) => {
-      let diags = await bridge.getDiagnostics(filePath)
-      if (severity) {
-        const levels = ['hint', 'information', 'warning', 'error']
-        const minLevel = levels.indexOf(severity)
-        diags = diags.filter(d => levels.indexOf(d.severity) >= minLevel)
-      }
+    async ({ scope, targetPath, recursive, severity }) => {
+      const diags = await bridge.getDiagnostics({ scope, targetPath, recursive, severity })
       return { content: [{ type: 'text', text: JSON.stringify(diags) }] }
+    }
+  )
+
+  // --- Repo Map ---
+  server.tool(
+    'get_repo_map',
+    'Generate an AST-based global symbol map of the repository to provide context to agents',
+    {
+      directory: z.string().optional().describe('Absolute path to the directory to map. Defaults to workspace root.'),
+    },
+    async ({ directory }) => {
+      const map = await bridge.getRepoMap(directory)
+      return { content: [{ type: 'text', text: map }] }
     }
   )
 
@@ -90,6 +100,51 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
     async ({ filePath, newContent, title }) => {
       await bridge.showDiff(filePath, newContent, title)
       return { content: [{ type: 'text', text: JSON.stringify({ shown: true, filePath }) }] }
+    }
+  )
+
+  // --- Show Message ---
+  server.tool(
+    'show_message',
+    'Display a notification message to the user in the VS Code UI',
+    {
+      message: z.string().describe('The text of the message'),
+      level: z.enum(['info', 'warning', 'error']).optional().default('info').describe('The severity level of the message'),
+      items: z.array(z.string()).optional().default([]).describe('Buttons/options to show alongside the message'),
+    },
+    async ({ message, level, items }) => {
+      const selectedItem = await bridge.showMessage(message, level, items)
+      return { content: [{ type: 'text', text: JSON.stringify({ selectedItem: selectedItem ?? null }) }] }
+    }
+  )
+
+  // --- Show Quick Pick ---
+  server.tool(
+    'show_quick_pick',
+    'Show a dropdown menu for the user to select from multiple options',
+    {
+      items: z.array(z.string()).describe('The list of options to display'),
+      placeHolder: z.string().optional().describe('Prompt text shown in the input box'),
+      canPickMany: z.boolean().optional().default(false).describe('Allow selecting multiple items'),
+    },
+    async ({ items, placeHolder, canPickMany }) => {
+      const selectedItems = await bridge.showQuickPick(items, placeHolder, canPickMany)
+      return { content: [{ type: 'text', text: JSON.stringify({ selectedItems: selectedItems ?? [] }) }] }
+    }
+  )
+
+  // --- Request Input ---
+  server.tool(
+    'request_input',
+    'Prompt the user for direct free-text input',
+    {
+      prompt: z.string().describe('The text to explain what input is needed'),
+      placeHolder: z.string().optional().describe('Placeholder text in the input box'),
+      value: z.string().optional().describe('Pre-filled value'),
+    },
+    async ({ prompt, placeHolder, value }) => {
+      const inputValue = await bridge.requestInput(prompt, placeHolder, value)
+      return { content: [{ type: 'text', text: JSON.stringify({ value: inputValue ?? null }) }] }
     }
   )
 
@@ -237,6 +292,100 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
         return { filePath: d.targetUri.fsPath, startLine: d.targetRange.start.line, startChar: d.targetRange.start.character, endLine: d.targetRange.end.line, endChar: d.targetRange.end.character }
       })
       return { content: [{ type: 'text', text: JSON.stringify(serialized) }] }
+    }
+  )
+
+  // --- Go To Type Definition ---
+  server.tool(
+    'go_to_type_definition',
+    'Get the type definition location(s) of a symbol at a given position using LSP',
+    {
+      filePath: z.string().describe('Absolute path to the file'),
+      line: z.number().int().min(0).describe('Line number (0-indexed)'),
+      character: z.number().int().min(0).describe('Character position (0-indexed)'),
+    },
+    async ({ filePath, line, character }) => {
+      const defs = await bridge.getTypeDefinition(filePath, line, character)
+      const serialized = (defs ?? []).map(d => {
+        if ('uri' in d) {
+          return { filePath: d.uri.fsPath, startLine: d.range.start.line, startChar: d.range.start.character, endLine: d.range.end.line, endChar: d.range.end.character }
+        }
+        return { filePath: d.targetUri.fsPath, startLine: d.targetRange.start.line, startChar: d.targetRange.start.character, endLine: d.targetRange.end.line, endChar: d.targetRange.end.character }
+      })
+      return { content: [{ type: 'text', text: JSON.stringify(serialized) }] }
+    }
+  )
+
+  // --- Go To Implementation ---
+  server.tool(
+    'go_to_implementation',
+    'Get the implementation location(s) of a symbol at a given position using LSP',
+    {
+      filePath: z.string().describe('Absolute path to the file'),
+      line: z.number().int().min(0).describe('Line number (0-indexed)'),
+      character: z.number().int().min(0).describe('Character position (0-indexed)'),
+    },
+    async ({ filePath, line, character }) => {
+      const defs = await bridge.getImplementation(filePath, line, character)
+      const serialized = (defs ?? []).map(d => {
+        if ('uri' in d) {
+          return { filePath: d.uri.fsPath, startLine: d.range.start.line, startChar: d.range.start.character, endLine: d.range.end.line, endChar: d.range.end.character }
+        }
+        return { filePath: d.targetUri.fsPath, startLine: d.targetRange.start.line, startChar: d.targetRange.start.character, endLine: d.targetRange.end.line, endChar: d.targetRange.end.character }
+      })
+      return { content: [{ type: 'text', text: JSON.stringify(serialized) }] }
+    }
+  )
+
+  // --- Get Signature Help ---
+  server.tool(
+    'get_signature_help',
+    'Get parameter hints and signature information for a function call using LSP',
+    {
+      filePath: z.string().describe('Absolute path to the file'),
+      line: z.number().int().min(0).describe('Line number (0-indexed)'),
+      character: z.number().int().min(0).describe('Character position (0-indexed)'),
+      triggerCharacter: z.string().optional().describe('The character that triggered the signature help (e.g., ",")'),
+    },
+    async ({ filePath, line, character, triggerCharacter }) => {
+      const help = await bridge.getSignatureHelp(filePath, line, character, triggerCharacter)
+      if (!help) return { content: [{ type: 'text', text: JSON.stringify({ activeSignature: 0, activeParameter: 0, signatures: [] }) }] }
+      
+      const serialized = {
+        activeSignature: help.activeSignature,
+        activeParameter: help.activeParameter,
+        signatures: help.signatures.map(s => ({
+          label: s.label,
+          documentation: typeof s.documentation === 'string' ? s.documentation : (s.documentation?.value ?? null),
+          parameters: s.parameters.map(p => ({
+            label: typeof p.label === 'string' ? p.label : (Array.isArray(p.label) ? p.label.map(n => n.toString()).join(',') : ''),
+            documentation: typeof p.documentation === 'string' ? p.documentation : (p.documentation?.value ?? null)
+          }))
+        }))
+      }
+      return { content: [{ type: 'text', text: JSON.stringify(serialized) }] }
+    }
+  )
+
+  // --- Get Completions ---
+  server.tool(
+    'get_completions',
+    'Get IntelliSense completion suggestions at a specific position using LSP',
+    {
+      filePath: z.string().describe('Absolute path to the file'),
+      line: z.number().int().min(0).describe('Line number (0-indexed)'),
+      character: z.number().int().min(0).describe('Character position (0-indexed)'),
+      triggerCharacter: z.string().optional().describe('The character that triggered the completion (e.g., ".")'),
+    },
+    async ({ filePath, line, character, triggerCharacter }) => {
+      const completions = await bridge.getCompletions(filePath, line, character, triggerCharacter)
+      const serialized = (completions?.items ?? []).map(c => ({
+        label: typeof c.label === 'string' ? c.label : c.label.label,
+        kind: c.kind !== undefined ? c.kind.toString() : 'Unknown',
+        detail: c.detail ?? null,
+        documentation: typeof c.documentation === 'string' ? c.documentation : (c.documentation?.value ?? null),
+      }))
+      return { content: [{ type: 'text', text: JSON.stringify({ completions: serialized }) }] }
     }
   )
 
@@ -462,5 +611,36 @@ export function registerTools(server: McpServer, bridge: VsCodeBridge, settings:
       if (!ok) throw new Error(`Terminal '${id}' not found`)
       return { content: [{ type: 'text', text: JSON.stringify({ killed: true }) }] }
     })
+  )
+
+  // --- Git Tools ---
+  server.tool(
+    'git_action',
+    'Execute common Git operations directly',
+    {
+      operation: z.enum(['commit', 'checkout', 'branch', 'status']).describe('The git operation to perform'),
+      branchName: z.string().optional().describe('Target branch for checkout or branch commands'),
+      commitMessage: z.string().optional().describe('Message for commit command'),
+    },
+    async ({ operation, branchName, commitMessage }) => {
+      const result = await bridge.gitAction(operation, branchName, commitMessage)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    }
+  )
+
+  // --- Editor Control ---
+  server.tool(
+    'add_editor_decoration',
+    'Highlight specific lines or ranges in the active editor to provide visual feedback',
+    {
+      filePath: z.string().describe('Absolute path to the file'),
+      startLine: z.number().int().min(0).describe('0-indexed start line'),
+      endLine: z.number().int().min(0).describe('0-indexed end line'),
+      color: z.string().optional().describe("CSS color name or hex code. Defaults to 'rgba(255, 255, 0, 0.3)'"),
+    },
+    async ({ filePath, startLine, endLine, color }) => {
+      const success = await bridge.addEditorDecoration(filePath, startLine, endLine, color)
+      return { content: [{ type: 'text', text: JSON.stringify({ success }) }] }
+    }
   )
 }

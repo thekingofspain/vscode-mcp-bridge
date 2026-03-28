@@ -61,11 +61,7 @@ export class ContextPusher {
   }
 
   private async pushDiagnostics(): Promise<void> {
-    // Only push diagnostics for open files
-    const tabs = this.bridge.getOpenTabs()
-    const paths = tabs.map(t => t.path)
-    const allDiags = await this.bridge.getDiagnostics()
-    const filtered = allDiags.filter(d => paths.includes(d.filePath))
+    const filtered = await this.bridge.getDiagnostics({ scope: 'open_files' })
     this.emit('diagnostics', filtered)
   }
 }
