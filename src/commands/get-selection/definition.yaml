@@ -1,0 +1,34 @@
+tool: get_selection
+description: Get the current text selection and cursor position
+category: editor
+version: 1.0.0
+stability: stable
+
+input: {}
+
+output:
+  type: object
+  properties:
+    text: string
+    startLine: number
+    startChar: number
+    endLine: number
+    endChar: number
+    isEmpty: boolean
+    filePath: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/editors.getSelectionSnapshot
+
+examples:
+  - name: Get current selection
+    input: {}
+
+metadata:
+  relatedTools:
+    - get_active_file
+    - get_open_tabs

@@ -1,2 +1,5 @@
 // Window API exports
-// TODO: Add editors.ts, terminals.ts, ui.ts, decorations.ts
+export * from './editors.js'
+export * from './ui.js'
+export * from './decorations.js'
+export * from './terminals.js'

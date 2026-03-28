@@ -1,0 +1,33 @@
+tool: kill_terminal
+description: Kill a managed terminal and its process
+category: terminal
+version: 1.0.0
+stability: stable
+
+input:
+  id:
+    type: string
+    description: Terminal ID
+    required: true
+
+output:
+  type: object
+  properties:
+    killed: boolean
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - services/TerminalManager.kill
+
+examples:
+  - name: Kill terminal
+    input:
+      id: term_1
+
+metadata:
+  relatedTools:
+    - spawn_terminal
+    - list_terminals

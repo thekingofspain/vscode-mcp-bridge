@@ -1,0 +1,28 @@
+tool: get_open_tabs
+description: Get all currently open file tabs in VS Code
+category: editor
+version: 1.0.0
+stability: stable
+
+input: {}
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/editors.getOpenTabs
+
+examples:
+  - name: Get all open tabs
+    input: {}
+
+metadata:
+  relatedTools:
+    - get_active_file
+    - get_selection

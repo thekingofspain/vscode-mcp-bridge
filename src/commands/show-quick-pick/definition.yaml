@@ -1,0 +1,43 @@
+tool: show_quick_pick
+description: Show a dropdown menu for the user to select from multiple options
+category: editor
+version: 1.0.0
+stability: stable
+
+input:
+  items:
+    type: array
+    description: The list of options to display
+    required: true
+  placeHolder:
+    type: string
+    description: Prompt text shown in the input box
+    required: false
+  canPickMany:
+    type: boolean
+    description: Allow selecting multiple items
+    required: false
+    default: false
+
+output:
+  type: object
+  properties:
+    selectedItems: array
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/ui.showQuickPick
+
+examples:
+  - name: Show quick pick
+    input:
+      items: [Option 1, Option 2, Option 3]
+      placeHolder: Select an option
+
+metadata:
+  relatedTools:
+    - show_message
+    - request_input

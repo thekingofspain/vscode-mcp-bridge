@@ -1,0 +1,50 @@
+tool: write_file
+description: Write content to a file. Integrates with VS Code undo history.
+category: files
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  content:
+    type: string
+    description: The full content to write
+    required: true
+  createIfMissing:
+    type: boolean
+    description: Create the file if it does not exist
+    required: false
+    default: true
+
+output:
+  type: object
+  properties:
+    success: boolean
+    path: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/filesystem.writeFile
+
+examples:
+  - name: Write to existing file
+    input:
+      filePath: /path/to/file.ts
+      content: console.log('Hello')
+  - name: Create and write new file
+    input:
+      filePath: /path/to/new.ts
+      content: export const x = 1
+      createIfMissing: true
+
+metadata:
+  relatedTools:
+    - read_file
+    - create_file
+    - delete_file

@@ -1,0 +1,50 @@
+tool: add_editor_decoration
+description: Highlight specific lines or ranges in the active editor to provide visual feedback
+category: editor
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  startLine:
+    type: number
+    description: 0-indexed start line
+    required: true
+    constraints:
+      min: 0
+  endLine:
+    type: number
+    description: 0-indexed end line
+    required: true
+    constraints:
+      min: 0
+  color:
+    type: string
+    description: CSS color name or hex code. Defaults to 'rgba(255, 255, 0, 0.3)'
+    required: false
+
+output:
+  type: object
+  properties:
+    success: boolean
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/decorations.addEditorDecoration
+
+examples:
+  - name: Highlight lines
+    input:
+      filePath: /path/to/file.ts
+      startLine: 10
+      endLine: 20
+      color: rgba(255, 0, 0, 0.3)
+
+metadata:
+  relatedTools: []

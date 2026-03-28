@@ -1,0 +1,45 @@
+tool: show_message
+description: Display a notification message to the user in the VS Code UI
+category: editor
+version: 1.0.0
+stability: stable
+
+input:
+  message:
+    type: string
+    description: The text of the message
+    required: true
+  level:
+    type: enum
+    values: [info, warning, error]
+    description: The severity level of the message
+    required: false
+    default: info
+  items:
+    type: array
+    description: Buttons/options to show alongside the message
+    required: false
+    default: []
+
+output:
+  type: object
+  properties:
+    selectedItem: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/ui.showMessage
+
+examples:
+  - name: Show info message
+    input:
+      message: Operation completed
+      level: info
+
+metadata:
+  relatedTools:
+    - show_quick_pick
+    - request_input

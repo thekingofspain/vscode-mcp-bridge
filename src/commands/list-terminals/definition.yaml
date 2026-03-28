@@ -1,0 +1,28 @@
+tool: list_terminals
+description: List all managed terminals and their status (alive/dead, log size)
+category: terminal
+version: 1.0.0
+stability: stable
+
+input: {}
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - services/TerminalManager.list
+
+examples:
+  - name: List terminals
+    input: {}
+
+metadata:
+  relatedTools:
+    - spawn_terminal
+    - read_terminal

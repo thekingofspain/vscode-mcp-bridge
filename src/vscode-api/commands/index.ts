@@ -1,2 +1,3 @@
 // Commands API exports
-// TODO: Add execute.ts, git.ts
+export * from './execute.js'
+export * from './git.js'

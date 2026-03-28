@@ -1,0 +1,34 @@
+tool: delete_file
+description: Delete a file
+category: files
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file to delete
+    required: true
+
+output:
+  type: object
+  properties:
+    deleted: boolean
+    filePath: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/filesystem.deleteFile
+
+examples:
+  - name: Delete file
+    input:
+      filePath: /path/to/file.ts
+
+metadata:
+  relatedTools:
+    - create_file
+    - write_file

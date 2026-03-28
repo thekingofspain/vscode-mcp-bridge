@@ -1,0 +1,43 @@
+tool: write_terminal
+description: Send input/text to a managed terminal (e.g. answer a prompt, send a command)
+category: terminal
+version: 1.0.0
+stability: stable
+
+input:
+  id:
+    type: string
+    description: Terminal ID
+    required: true
+  input:
+    type: string
+    description: Text to send to the terminal stdin
+    required: true
+  addNewline:
+    type: boolean
+    description: Append a newline after the input
+    required: false
+    default: true
+
+output:
+  type: object
+  properties:
+    sent: boolean
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - services/TerminalManager.write
+
+examples:
+  - name: Send input to terminal
+    input:
+      id: term_1
+      input: ls -la
+
+metadata:
+  relatedTools:
+    - spawn_terminal
+    - read_terminal

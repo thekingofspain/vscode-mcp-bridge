@@ -1,0 +1,33 @@
+tool: search_workspace_symbols
+description: Search for symbols across the entire workspace
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  query:
+    type: string
+    description: Symbol name to search for
+    required: true
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/symbols.getWorkspaceSymbols
+
+examples:
+  - name: Search symbols
+    input:
+      query: MyClass
+
+metadata:
+  relatedTools:
+    - get_document_symbols
+    - get_repo_map

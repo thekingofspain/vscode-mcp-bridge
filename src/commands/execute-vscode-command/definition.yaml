@@ -1,0 +1,36 @@
+tool: execute_vscode_command
+description: Execute any VS Code command. Requires the command to be in the allowedCommands setting.
+category: workspace
+version: 1.0.0
+stability: stable
+
+input:
+  command:
+    type: string
+    description: The VS Code command ID to execute
+    required: true
+  args:
+    type: array
+    description: Arguments to pass to the command
+    required: false
+    default: []
+
+output:
+  type: object
+  properties:
+    result: any
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/commands/execute.executeCommand
+
+examples:
+  - name: Execute command
+    input:
+      command: workbench.action.files.save
+
+metadata:
+  relatedTools: []

@@ -1,0 +1,30 @@
+tool: get_repo_map
+description: Generate an AST-based global symbol map of the repository to provide context to agents
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  directory:
+    type: string
+    description: Absolute path to the directory to map. Defaults to workspace root.
+    required: false
+
+output:
+  type: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/symbols.getRepoMap
+
+examples:
+  - name: Get repo map
+    input: {}
+
+metadata:
+  relatedTools:
+    - get_workspace_info
+    - get_document_symbols

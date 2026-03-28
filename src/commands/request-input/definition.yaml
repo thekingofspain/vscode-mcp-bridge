@@ -1,0 +1,42 @@
+tool: request_input
+description: Prompt the user for direct free-text input
+category: editor
+version: 1.0.0
+stability: stable
+
+input:
+  prompt:
+    type: string
+    description: The text to explain what input is needed
+    required: true
+  placeHolder:
+    type: string
+    description: Placeholder text in the input box
+    required: false
+  value:
+    type: string
+    description: Pre-filled value
+    required: false
+
+output:
+  type: object
+  properties:
+    value: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/ui.requestInput
+
+examples:
+  - name: Request input
+    input:
+      prompt: Enter your name
+      placeHolder: John Doe
+
+metadata:
+  relatedTools:
+    - show_message
+    - show_quick_pick

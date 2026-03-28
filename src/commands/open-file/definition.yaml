@@ -1,0 +1,53 @@
+tool: open_file
+description: Open a file in the VS Code editor
+category: files
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  line:
+    type: number
+    description: Line to jump to (0-indexed)
+    required: false
+    constraints:
+      min: 0
+  character:
+    type: number
+    description: Character position
+    required: false
+    constraints:
+      min: 0
+  preview:
+    type: boolean
+    description: Open in preview mode
+    required: false
+    default: false
+
+output:
+  type: object
+  properties:
+    opened: boolean
+    filePath: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/documents.openFile
+
+examples:
+  - name: Open file at position
+    input:
+      filePath: /path/to/file.ts
+      line: 10
+      character: 5
+
+metadata:
+  relatedTools:
+    - close_file
+    - read_file

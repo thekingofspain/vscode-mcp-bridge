@@ -1,0 +1,46 @@
+tool: run_terminal_command
+description: Run a shell command and capture its output
+category: terminal
+version: 1.0.0
+stability: stable
+
+input:
+  command:
+    type: string
+    description: The shell command to run
+    required: true
+  cwd:
+    type: string
+    description: Working directory (defaults to workspace root)
+    required: false
+  timeoutMs:
+    type: number
+    description: Timeout in milliseconds
+    required: false
+    default: 30000
+    constraints:
+      min: 1000
+
+output:
+  type: object
+  properties:
+    stdout: string
+    stderr: string
+    exitCode: number
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/terminals.runCommand
+
+examples:
+  - name: Run command
+    input:
+      command: npm test
+      timeoutMs: 60000
+
+metadata:
+  relatedTools:
+    - spawn_terminal

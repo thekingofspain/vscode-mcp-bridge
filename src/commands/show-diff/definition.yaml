@@ -1,0 +1,42 @@
+tool: show_diff
+description: Show a visual diff in VS Code before applying file changes. Does NOT write the file.
+category: editor
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file to diff
+    required: true
+  newContent:
+    type: string
+    description: The proposed new content to show in the diff
+    required: true
+  title:
+    type: string
+    description: Title for the diff editor tab
+    required: false
+
+output:
+  type: object
+  properties:
+    shown: boolean
+    filePath: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/window/editors.showDiff
+
+examples:
+  - name: Show diff
+    input:
+      filePath: /path/to/file.ts
+      newContent: console.log('new')
+
+metadata:
+  relatedTools:
+    - write_file

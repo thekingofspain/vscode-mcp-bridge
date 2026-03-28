@@ -1,0 +1,34 @@
+tool: close_file
+description: Close a file tab in VS Code
+category: files
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file to close
+    required: true
+
+output:
+  type: object
+  properties:
+    closed: boolean
+    filePath: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/documents.closeFile
+
+examples:
+  - name: Close file
+    input:
+      filePath: /path/to/file.ts
+
+metadata:
+  relatedTools:
+    - open_file
+    - get_open_tabs

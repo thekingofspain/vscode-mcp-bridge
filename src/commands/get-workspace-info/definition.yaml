@@ -1,0 +1,28 @@
+tool: get_workspace_info
+description: Get information about the current VS Code workspace
+category: workspace
+version: 1.0.0
+stability: stable
+
+input: {}
+
+output:
+  type: object
+  properties:
+    workspaceFolders: array
+    workspaceFile: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/documents.getWorkspaceInfo
+
+examples:
+  - name: Get workspace info
+    input: {}
+
+metadata:
+  relatedTools:
+    - get_repo_map

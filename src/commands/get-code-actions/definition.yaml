@@ -1,0 +1,60 @@
+tool: get_code_actions
+description: Get available code actions (quick fixes, refactors) for a range in a file
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  startLine:
+    type: number
+    description: Start line (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  startChar:
+    type: number
+    description: Start character (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  endLine:
+    type: number
+    description: End line (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  endChar:
+    type: number
+    description: End character (0-indexed)
+    required: true
+    constraints:
+      min: 0
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/languages/codeactions.getCodeActions
+
+examples:
+  - name: Get code actions
+    input:
+      filePath: /path/to/file.ts
+      startLine: 10
+      startChar: 0
+      endLine: 10
+      endChar: 50
+
+metadata:
+  relatedTools:
+    - apply_code_action

@@ -1,0 +1,51 @@
+tool: get_diagnostics
+description: Get LSP diagnostics with expanded filtering options (Git delta, recursive folders)
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  scope:
+    type: enum
+    values: [open_files, workspace, git_delta, folder, file]
+    description: Filtering scope for diagnostics
+    required: true
+  targetPath:
+    type: string
+    description: Absolute path to a specific file or folder (required if scope is file or folder)
+    required: false
+  recursive:
+    type: boolean
+    description: Recursive folder search (if scope is folder)
+    required: false
+    default: true
+  severity:
+    type: enum
+    values: [error, warning, information, hint]
+    description: Filter by minimum severity
+    required: false
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/diagnostics.getDiagnostics
+
+examples:
+  - name: Get all workspace errors
+    input:
+      scope: workspace
+      severity: error
+  - name: Get git changes diagnostics
+    input:
+      scope: git_delta
+
+metadata:
+  relatedTools:
+    - get_document_symbols

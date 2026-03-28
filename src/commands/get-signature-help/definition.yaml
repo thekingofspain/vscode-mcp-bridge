@@ -1,0 +1,52 @@
+tool: get_signature_help
+description: Get parameter hints and signature information for a function call using LSP
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  line:
+    type: number
+    description: Line number (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  character:
+    type: number
+    description: Character position (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  triggerCharacter:
+    type: string
+    description: The character that triggered the signature help (e.g., ",")
+    required: false
+
+output:
+  type: object
+  properties:
+    activeSignature: number
+    activeParameter: number
+    signatures: array
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/languages/signature.getSignatureHelp
+
+examples:
+  - name: Get signature help
+    input:
+      filePath: /path/to/file.ts
+      line: 10
+      character: 15
+
+metadata:
+  relatedTools:
+    - get_completions

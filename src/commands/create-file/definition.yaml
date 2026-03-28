@@ -1,0 +1,43 @@
+tool: create_file
+description: Create a new file
+category: files
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path for the new file
+    required: true
+  content:
+    type: string
+    description: Initial content
+    required: false
+    default: ''
+
+output:
+  type: object
+  properties:
+    created: boolean
+    filePath: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/filesystem.createFile
+
+examples:
+  - name: Create empty file
+    input:
+      filePath: /path/to/new.ts
+  - name: Create file with content
+    input:
+      filePath: /path/to/new.ts
+      content: console.log('Hello')
+
+metadata:
+  relatedTools:
+    - write_file
+    - delete_file

@@ -1,0 +1,45 @@
+tool: git_action
+description: Execute common Git operations directly
+category: git
+version: 1.0.0
+stability: stable
+
+input:
+  operation:
+    type: enum
+    values: [commit, checkout, branch, status]
+    description: The git operation to perform
+    required: true
+  branchName:
+    type: string
+    description: Target branch for checkout or branch commands
+    required: false
+  commitMessage:
+    type: string
+    description: Message for commit command
+    required: false
+
+output:
+  type: object
+  properties:
+    success: boolean
+    output: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/commands/git.gitAction
+
+examples:
+  - name: Git status
+    input:
+      operation: status
+  - name: Git commit
+    input:
+      operation: commit
+      commitMessage: "feat: add new feature"
+
+metadata:
+  relatedTools: []

@@ -1,0 +1,50 @@
+tool: get_completions
+description: Get IntelliSense completion suggestions at a specific position using LSP
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  line:
+    type: number
+    description: Line number (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  character:
+    type: number
+    description: Character position (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  triggerCharacter:
+    type: string
+    description: The character that triggered the completion (e.g., ".")
+    required: false
+
+output:
+  type: object
+  properties:
+    completions: array
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/languages/completions.getCompletions
+
+examples:
+  - name: Get completions
+    input:
+      filePath: /path/to/file.ts
+      line: 10
+      character: 5
+
+metadata:
+  relatedTools:
+    - get_signature_help

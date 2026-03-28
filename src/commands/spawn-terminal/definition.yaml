@@ -1,0 +1,45 @@
+tool: spawn_terminal
+description: Spawn a long-running process (dev server, watch mode, etc.) in a VS Code terminal with output capture. Use run_terminal_command for short-lived commands instead.
+category: terminal
+version: 1.0.0
+stability: stable
+
+input:
+  name:
+    type: string
+    description: Display name for the terminal (e.g. "dev-server", "tests-watch")
+    required: true
+  command:
+    type: string
+    description: Command to run immediately (e.g. "npm run dev"). Omit to just open a shell.
+    required: false
+  cwd:
+    type: string
+    description: Working directory (defaults to workspace root)
+    required: false
+
+output:
+  type: object
+  properties:
+    id: string
+    name: string
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - services/TerminalManager.spawn
+
+examples:
+  - name: Spawn dev server
+    input:
+      name: dev-server
+      command: npm run dev
+
+metadata:
+  relatedTools:
+    - run_terminal_command
+    - list_terminals
+    - read_terminal
+    - kill_terminal

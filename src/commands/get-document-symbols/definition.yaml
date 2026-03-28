@@ -1,0 +1,33 @@
+tool: get_document_symbols
+description: Get all symbols (functions, classes, variables, etc.) in a file
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/symbols.getDocumentSymbols
+
+examples:
+  - name: Get document symbols
+    input:
+      filePath: /path/to/file.ts
+
+metadata:
+  relatedTools:
+    - search_workspace_symbols
+    - get_repo_map

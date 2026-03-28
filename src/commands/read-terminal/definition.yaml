@@ -1,0 +1,41 @@
+tool: read_terminal
+description: Read recent output from a managed terminal. Returns the tail of the output buffer.
+category: terminal
+version: 1.0.0
+stability: stable
+
+input:
+  id:
+    type: string
+    description: Terminal ID (from spawn_terminal or list_terminals)
+    required: true
+  lines:
+    type: number
+    description: Number of lines to return from the end
+    required: false
+    constraints:
+      min: 1
+
+output:
+  type: object
+  properties:
+    output: string
+    truncated: boolean
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - services/TerminalManager.readOutput
+
+examples:
+  - name: Read terminal output
+    input:
+      id: term_1
+      lines: 100
+
+metadata:
+  relatedTools:
+    - spawn_terminal
+    - list_terminals

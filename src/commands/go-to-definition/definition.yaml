@@ -1,0 +1,47 @@
+tool: go_to_definition
+description: Get the definition location(s) of a symbol at a given position using LSP
+category: lsp
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  line:
+    type: number
+    description: Line number (0-indexed)
+    required: true
+    constraints:
+      min: 0
+  character:
+    type: number
+    description: Character position (0-indexed)
+    required: true
+    constraints:
+      min: 0
+
+output:
+  type: array
+  items:
+    type: object
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/languages/definitions.getDefinition
+
+examples:
+  - name: Go to definition
+    input:
+      filePath: /path/to/file.ts
+      line: 10
+      character: 5
+
+metadata:
+  relatedTools:
+    - find_references
+    - go_to_type_definition

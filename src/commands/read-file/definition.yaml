@@ -1,0 +1,51 @@
+tool: read_file
+description: Read the contents of a file from the file system
+category: files
+version: 1.0.0
+stability: stable
+
+input:
+  filePath:
+    type: string
+    description: Absolute path to the file
+    required: true
+  startLine:
+    type: number
+    description: Start line (0-indexed, inclusive)
+    required: false
+    constraints:
+      min: 0
+  endLine:
+    type: number
+    description: End line (0-indexed, inclusive)
+    required: false
+    constraints:
+      min: 0
+
+output:
+  type: object
+  properties:
+    content: string
+    exists: boolean
+
+handler:
+  module: handler.ts
+  function: execute
+
+dependencies:
+  - vscode-api/workspace/documents.readFile
+
+examples:
+  - name: Read entire file
+    input:
+      filePath: /path/to/file.ts
+  - name: Read specific lines
+    input:
+      filePath: /path/to/file.ts
+      startLine: 10
+      endLine: 20
+
+metadata:
+  relatedTools:
+    - write_file
+    - open_file
