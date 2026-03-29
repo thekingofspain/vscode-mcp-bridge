@@ -15,19 +15,3 @@ export function toMcpResponse(
 
   return { content: [{ type: 'text', text }] };
 }
-
-/**
- * Convert an error to MCP response format
- */
-export function toMcpErrorResponse(error: unknown): McpToolResponse {
-  const message = error instanceof Error ? error.message : String(error);
-
-  return toMcpResponse({ error: message });
-}
-
-/**
- * Create an MCP error response with a custom message
- */
-export function createErrorResponse(message: string): McpToolResponse {
-  return toMcpResponse({ error: message });
-}

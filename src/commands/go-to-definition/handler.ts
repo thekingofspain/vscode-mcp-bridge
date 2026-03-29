@@ -1,30 +1,13 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { FilePosition } from '@type-defs/index.js';
+import { serializeLocations } from '@utils/location.js';
 import { getDefinition } from '@vscode-api/languages/definitions.js';
 
 export async function execute(
   args: FilePosition,
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
   const defs = await getDefinition(args.filePath, args.line, args.character);
-  const serialized = defs.map((d) => {
-    if ('uri' in d) {
-      return {
-        filePath: d.uri.fsPath,
-        startLine: d.range.start.line,
-        startChar: d.range.start.character,
-        endLine: d.range.end.line,
-        endChar: d.range.end.character,
-      };
-    }
-
-    return {
-      filePath: d.targetUri.fsPath,
-      startLine: d.targetRange.start.line,
-      startChar: d.targetRange.start.character,
-      endLine: d.targetRange.end.line,
-      endChar: d.targetRange.end.character,
-    };
-  });
+  const serialized = serializeLocations(defs);
 
   return { content: [{ type: 'text', text: JSON.stringify(serialized) }] };
 }

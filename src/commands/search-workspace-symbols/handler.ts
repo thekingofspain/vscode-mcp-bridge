@@ -1,11 +1,6 @@
-import { SymbolKind } from 'vscode';
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { WorkspaceSymbolSearchArgs } from '@type-defs/index.js';
-import { getWorkspaceSymbols } from '@vscode-api/workspace/symbols.js';
-
-function symbolKindName(kind: SymbolKind): string {
-  return SymbolKind[kind];
-}
+import { getSymbolKindName, getWorkspaceSymbols } from '@vscode-api/workspace/symbols.js';
 
 export async function execute(
   args: WorkspaceSymbolSearchArgs,
@@ -13,7 +8,7 @@ export async function execute(
   const symbols = await getWorkspaceSymbols(args.query);
   const serialized = symbols.map((s) => ({
     name: s.name,
-    kind: symbolKindName(s.kind),
+    kind: getSymbolKindName(s.kind),
     filePath: s.location.uri.fsPath,
     startLine: s.location.range.start.line,
     containerName: s.containerName,

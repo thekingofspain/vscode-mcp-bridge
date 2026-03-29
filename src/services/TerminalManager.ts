@@ -1,5 +1,5 @@
 import { log } from '@utils/logger.js';
-import { exec } from 'child_process';
+import { runCommand } from '@utils/shell.js';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -7,16 +7,6 @@ import * as vscode from 'vscode';
 import type { ManagedTerminal, TerminalResult } from './types.js';
 
 const MAX_READ_SIZE = 128 * 1024; // Read last 128 KB from log file
-// Dangerous shell patterns that should be blocked
-const DANGEROUS_PATTERNS = [
-  /rm\s+(-rf|--no-preserve-root)/i,
-  /format\s+[c-z]:/i,
-  />\s*\/dev\/.*/,
-  /\|\s*(bash|sh|zsh|cmd|powershell)/i,
-  /\$\([^)]+\)/, // Command substitution
-  /`[^`]+`/, // Backtick command substitution
-  /;\s*(rm|del|format|mkfs)/i,
-];
 
 export class TerminalManager {
   private terminals = new Map<string, ManagedTerminal>();
@@ -66,19 +56,6 @@ export class TerminalManager {
   }
 
   /**
-   * Validate a shell command for dangerous patterns
-   */
-  private validateCommand(command: string): void {
-    for (const pattern of DANGEROUS_PATTERNS) {
-      if (pattern.test(command)) {
-        throw new Error(
-          `Command contains dangerous patterns matching: ${pattern.toString()}`,
-        );
-      }
-    }
-  }
-
-  /**
    * Run a short-lived shell command and capture output
    */
   async runCommand(
@@ -86,27 +63,7 @@ export class TerminalManager {
     cwd?: string,
     timeoutMs = 30000,
   ): Promise<TerminalResult> {
-    // Validate command for dangerous patterns
-    this.validateCommand(command);
-
-    const workingDir =
-      cwd ??
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ??
-      process.cwd();
-
-    return new Promise((resolve) => {
-      exec(
-        command,
-        { cwd: workingDir, timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
-        (err, stdout, stderr) => {
-          resolve({
-            stdout: stdout,
-            stderr: stderr,
-            exitCode: err?.code ?? 0,
-          });
-        },
-      );
-    });
+    return runCommand(command, cwd, timeoutMs);
   }
 
   spawn(

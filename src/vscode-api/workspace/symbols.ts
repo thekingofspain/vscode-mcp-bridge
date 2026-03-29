@@ -5,6 +5,13 @@ import * as vscode from 'vscode';
 const DEFAULT_SYMBOL_LIMIT = 1000;
 
 /**
+ * Get the name of a SymbolKind enum value
+ */
+export function getSymbolKindName(kind: vscode.SymbolKind): string {
+  return vscode.SymbolKind[kind];
+}
+
+/**
  * Generate an AST-based global symbol map of the repository
  */
 export async function getRepoMap(
@@ -62,35 +69,7 @@ export async function getRepoMap(
         (a, b) => a.location.range.start.line - b.location.range.start.line,
       );
       for (const s of syms) {
-        const kinds = [
-          'File',
-          'Module',
-          'Namespace',
-          'Package',
-          'Class',
-          'Method',
-          'Property',
-          'Field',
-          'Constructor',
-          'Enum',
-          'Interface',
-          'Function',
-          'Variable',
-          'Constant',
-          'String',
-          'Number',
-          'Boolean',
-          'Array',
-          'Object',
-          'Key',
-          'Null',
-          'EnumMember',
-          'Struct',
-          'Event',
-          'Operator',
-          'TypeParameter',
-        ];
-        const kindName = kinds[s.kind] ?? 'Unknown';
+        const kindName = getSymbolKindName(s.kind);
 
         out += `  - [${kindName}] ${s.name} (Line ${String(s.location.range.start.line + 1)})\n`;
       }

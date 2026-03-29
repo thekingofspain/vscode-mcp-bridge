@@ -1,5 +1,6 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { FilePositionWithDeclaration } from '@type-defs/index.js';
+import { serializeLocations } from '@utils/location.js';
 import { getReferences } from '@vscode-api/languages/references.js';
 
 export async function execute(
@@ -11,13 +12,7 @@ export async function execute(
     args.character,
     args.includeDeclaration,
   );
-  const serialized = refs.map((r) => ({
-    filePath: r.uri.fsPath,
-    startLine: r.range.start.line,
-    startChar: r.range.start.character,
-    endLine: r.range.end.line,
-    endChar: r.range.end.character,
-  }));
+  const serialized = serializeLocations(refs);
 
   return { content: [{ type: 'text', text: JSON.stringify(serialized) }] };
 }

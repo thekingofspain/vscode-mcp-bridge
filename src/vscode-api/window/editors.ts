@@ -1,6 +1,5 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { getEditorForFile } from '@vscode-api/window/utils.js';
 import type { OpenTab, SelectionSnapshot } from './types.js';
 
 /**
@@ -107,31 +106,4 @@ export async function showDiff(
     title ?? `${path.basename(filePath)}: Original ↔ Modified`,
     { preview: false },
   );
-}
-
-/**
- * Add a decoration to specific lines in the active editor
- */
-export async function addEditorDecoration(
-  filePath: string,
-  startLine: number,
-  endLine: number,
-  color = 'rgba(255, 255, 0, 0.3)',
-): Promise<boolean> {
-  const editor = await getEditorForFile(filePath);
-
-  if (editor === null) return false;
-
-  const range = new vscode.Range(startLine, 0, endLine, Number.MAX_VALUE);
-  const decorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: color,
-  });
-
-  editor.setDecorations(decorationType, [range]);
-
-  setTimeout(() => {
-    decorationType.dispose();
-  }, 5000);
-
-  return true;
 }

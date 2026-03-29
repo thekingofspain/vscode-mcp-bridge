@@ -1,16 +1,12 @@
-import { SymbolKind, type DocumentSymbol } from 'vscode';
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DocumentSymbolsArgs } from '@type-defs/index.js';
-import { getDocumentSymbols } from '@vscode-api/workspace/symbols.js';
-
-function symbolKindName(kind: SymbolKind): string {
-  return SymbolKind[kind];
-}
+import { getDocumentSymbols, getSymbolKindName } from '@vscode-api/workspace/symbols.js';
+import { type DocumentSymbol } from 'vscode';
 
 function serializeSymbols(symbols: DocumentSymbol[]): unknown {
   return symbols.map((s) => ({
     name: s.name,
-    kind: symbolKindName(s.kind),
+    kind: getSymbolKindName(s.kind),
     startLine: s.range.start.line,
     endLine: s.range.end.line,
     detail: s.detail,
