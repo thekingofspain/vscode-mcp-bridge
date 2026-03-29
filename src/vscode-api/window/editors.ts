@@ -9,7 +9,7 @@ import type { OpenTab, SelectionSnapshot } from './types.js';
 export function getSelectionSnapshot(): SelectionSnapshot | null {
   const editor = vscode.window.activeTextEditor;
 
-  if (editor === undefined) return null;
+  if (!editor) return null;
 
   const selection = editor.selection;
   const selectedText = editor.document.getText(selection);

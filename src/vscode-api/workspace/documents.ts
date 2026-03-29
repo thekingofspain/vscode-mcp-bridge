@@ -8,7 +8,7 @@ import type { ActiveFileSnapshot, ReadFileResult, WorkspaceInfo } from './types.
 export function getActiveFileSnapshot(): ActiveFileSnapshot | null {
   const editor = vscode.window.activeTextEditor;
 
-  if (editor === undefined) return null;
+  if (!editor) return null;
 
   return {
     path: editor.document.uri.fsPath,
