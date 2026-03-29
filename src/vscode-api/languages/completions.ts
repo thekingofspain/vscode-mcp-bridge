@@ -7,7 +7,7 @@ export async function getCompletions(
   filePath: string,
   line: number,
   char: number,
-  triggerCharacter?: string
+  triggerCharacter?: string,
 ): Promise<vscode.CompletionList | undefined> {
   const uri = vscode.Uri.file(filePath);
   const pos = new vscode.Position(line, char);
@@ -16,6 +16,6 @@ export async function getCompletions(
     'vscode.executeCompletionItemProvider',
     uri,
     pos,
-    triggerCharacter
+    triggerCharacter,
   );
 }

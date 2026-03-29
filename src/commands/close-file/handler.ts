@@ -1,10 +1,11 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { closeFile } from '@vscode-api/workspace/documents.js';
+import { type z } from 'zod';
+import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { toMcpResponse } from '@utils/response.js';
-import type { FileOperationArgs } from '@type-defs/index.js';
+import { closeFile } from '@vscode-api/workspace/documents.js';
+import { CloseFileInputSchema } from './schema.js';
 
 export async function execute(
-  args: FileOperationArgs
+  args: z.infer<typeof CloseFileInputSchema>,
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
   const result = await closeFile(args.filePath);
 
@@ -12,8 +13,12 @@ export async function execute(
 }
 
 export function registerCloseFile(server: McpServer): void {
-  server.registerTool('close_file', {
-    description: 'Close a file tab in VS Code',
-    inputSchema: {}
-  }, execute as never);
+  server.registerTool(
+    'close_file',
+    {
+      description: 'Close a file tab in VS Code',
+      inputSchema: CloseFileInputSchema,
+    },
+    execute as never,
+  );
 }

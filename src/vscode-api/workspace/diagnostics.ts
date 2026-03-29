@@ -1,6 +1,9 @@
-import { DIAGNOSTIC_SCOPE, DIAGNOSTIC_SEVERITY } from '@type-defs/common.js';
-import * as path from 'path';
+import { exec } from 'node:child_process';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
+
+import { DIAGNOSTIC_SCOPE, DIAGNOSTIC_SEVERITY } from '@type-defs/common.js';
+
 import type { DiagnosticItem, GetDiagnosticsOptions } from './types.js';
 
 // Git command timeout in milliseconds
@@ -9,8 +12,10 @@ const GIT_COMMAND_TIMEOUT = 5000;
 /**
  * Get LSP diagnostics with expanded filtering options
  */
-export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<DiagnosticItem[]> {
-  const severityMap: Record<number, DiagnosticItem['severity']> = {
+export async function getDiagnostics(
+  opts: GetDiagnosticsOptions,
+): Promise<DiagnosticItem[]> {
+  const severityMap: Record<vscode.DiagnosticSeverity, DiagnosticItem['severity']> = {
     [vscode.DiagnosticSeverity.Error]: 'error',
     [vscode.DiagnosticSeverity.Warning]: 'warning',
     [vscode.DiagnosticSeverity.Information]: 'information',
@@ -21,25 +26,33 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
   if (opts.scope === DIAGNOSTIC_SCOPE.git_delta && root) {
     try {
-      const { exec } = await import('child_process');
       const result = await new Promise<string>((resolve, reject) => {
-        exec('git diff --name-only && git ls-files --others --exclude-standard',
+        exec(
+          'git diff --name-only && git ls-files --others --exclude-standard',
           { cwd: root, timeout: GIT_COMMAND_TIMEOUT },
           (err, stdout) => {
-            if (err) reject(err);
-            else resolve(stdout);
-          }
+            if (err != null) {
+              reject(err);
+            } else {
+              resolve(stdout);
+            }
+          },
         );
       });
 
-      urisToFilter = new Set(result.split('\n').map(f => path.join(root, f.trim())).filter(Boolean));
+      urisToFilter = new Set(
+        result
+          .split('\n')
+          .map((f) => path.join(root, f.trim()))
+          .filter((f) => f.length > 0),
+      );
     } catch (err) {
       // Log timeout or other errors for debugging
       console.warn('Git delta diagnostics failed:', err);
     }
   } else if (opts.scope === DIAGNOSTIC_SCOPE.open_files) {
     urisToFilter = new Set(
-      vscode.window.visibleTextEditors.map(e => e.document.uri.fsPath)
+      vscode.window.visibleTextEditors.map((e) => e.document.uri.fsPath),
     );
   } else if (opts.scope === DIAGNOSTIC_SCOPE.file && opts.targetPath) {
     urisToFilter = new Set([opts.targetPath]);
@@ -47,10 +60,10 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
   const allDiags = vscode.languages.getDiagnostics();
   const levels = Object.keys(DIAGNOSTIC_SEVERITY);
-  const minLevel = opts.severity ? levels.indexOf(opts.severity) : -1;
+  const minLevel = opts.severity != null ? levels.indexOf(opts.severity) : -1;
   const results: DiagnosticItem[] = [];
   // Filter URIs first to avoid unnecessary iteration
-  const filteredDiags = urisToFilter
+  const filteredDiags = urisToFilter != null
     ? Array.from(allDiags).filter(([uri]) => urisToFilter.has(uri.fsPath))
     : allDiags;
 
@@ -59,7 +72,10 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
     const fsPath = uri.fsPath;
 
-    if (opts.scope === DIAGNOSTIC_SCOPE.folder && opts.targetPath) {
+    if (
+      opts.scope === DIAGNOSTIC_SCOPE.folder &&
+      opts.targetPath != null
+    ) {
       const rel = path.relative(opts.targetPath, fsPath);
 
       if (rel.startsWith('..')) continue;
@@ -71,7 +87,10 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
       if (minLevel >= 0 && severityLevel < minLevel) continue;
 
-      const codeValue = typeof d.code === 'object' ? (d.code as { value: string | number }).value : d.code;
+      const codeValue =
+        typeof d.code === 'object'
+          ? (d.code as { value: string | number }).value
+          : d.code;
 
       results.push({
         filePath: fsPath,

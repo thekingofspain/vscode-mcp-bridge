@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 export async function getHover(
   filePath: string,
   line: number,
-  char: number
+  char: number,
 ): Promise<vscode.Hover[]> {
   const uri = vscode.Uri.file(filePath);
   const pos = new vscode.Position(line, char);
@@ -14,6 +14,6 @@ export async function getHover(
   return vscode.commands.executeCommand<vscode.Hover[]>(
     'vscode.executeHoverProvider',
     uri,
-    pos
+    pos,
   );
 }

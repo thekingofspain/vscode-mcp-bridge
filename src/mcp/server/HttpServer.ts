@@ -1,13 +1,13 @@
 // HTTP Server for MCP Bridge
 // Manages HTTP server lifecycle and request routing
 
+import * as http from 'http';
 import { getServerHost, getSettings } from '@config/Settings.js';
 import { MCP_SERVER_INSTRUCTIONS } from '@generated/instructions.js';
 import { registerAllTools } from '@mcp/tools/registry.js';
-import { ContextPusher } from '@services/ContextPusher.js';
-import { TerminalManager } from '@services/TerminalManager.js';
+import { type ContextPusher } from '@services/ContextPusher.js';
+import { type TerminalManager } from '@services/TerminalManager.js';
 import { log } from '@utils/logger.js';
-import * as http from 'http';
 import {
   checkAuth,
   handleHealth,
@@ -16,8 +16,7 @@ import {
   handleUnauthorized,
   setCorsHeaders,
 } from './handlers.js';
-import type { SessionManager } from './sessionManager.js';
-import { createSessionManager } from './sessionManager.js';
+import { createSessionManager, type SessionManager } from './sessionManager.js';
 
 const SERVER_HOST = getServerHost();
 
@@ -42,7 +41,9 @@ export class HttpServer {
     private terminalManager: TerminalManager,
   ) {
     this.sessionManager = createSessionManager();
-    this.httpServer = http.createServer((req, res) => { void this.handleRequest(req, res); });
+    this.httpServer = http.createServer((req, res) => {
+      void this.handleRequest(req, res);
+    });
   }
 
   get connectionCount(): number {
@@ -57,7 +58,10 @@ export class HttpServer {
    * Start the HTTP server on the preferred port (or next available)
    */
   async start(preferredPort: number): Promise<number> {
-    log.info(HttpServer.name, `Starting HTTP server on port ${String(preferredPort)}`);
+    log.info(
+      HttpServer.name,
+      `Starting HTTP server on port ${String(preferredPort)}`,
+    );
 
     if (this.actualPort > 0) {
       await this.stop();
@@ -68,17 +72,24 @@ export class HttpServer {
 
       try {
         await new Promise<void>((resolve, reject) => {
-          this.httpServer.listen(port, SERVER_HOST, () => { resolve(); });
+          this.httpServer.listen(port, SERVER_HOST, () => {
+            resolve();
+          });
           this.httpServer.once('error', reject);
         });
         this.actualPort = port;
-        log.info(HttpServer.name, `HTTP server listening on port ${String(port)}`);
+        log.info(
+          HttpServer.name,
+          `HTTP server listening on port ${String(port)}`,
+        );
         return port;
       } catch (err: unknown) {
         if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw err;
       }
     }
-    throw new Error(`Could not bind to any port in range ${String(preferredPort)}-${String(preferredPort + 4)}`);
+    throw new Error(
+      `Could not bind to any port in range ${String(preferredPort)}-${String(preferredPort + 4)}`,
+    );
   }
 
   /**
@@ -87,13 +98,20 @@ export class HttpServer {
   async stop(): Promise<void> {
     log.info(HttpServer.name, 'Stopping HTTP server');
     this.sessionManager.clear();
-    await new Promise<void>((resolve) => this.httpServer.close(() => { resolve(); }));
+    await new Promise<void>((resolve) =>
+      this.httpServer.close(() => {
+        resolve();
+      }),
+    );
   }
 
   /**
    * Handle incoming HTTP requests
    */
-  private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<void> {
     setCorsHeaders(res);
 
     if (req.method === 'OPTIONS') {
@@ -127,10 +145,18 @@ export class HttpServer {
   /**
    * Handle SSE (Server-Sent Events) connection for MCP protocol
    */
-  private async handleSse(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    const { sessionId, transport, mcpServer } = this.sessionManager.create(MCP_SERVER_INSTRUCTIONS);
+  private async handleSse(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<void> {
+    const { sessionId, transport, mcpServer } = this.sessionManager.create(
+      MCP_SERVER_INSTRUCTIONS,
+    );
 
-    log.info(HttpServer.name, `SSE session connected: ${sessionId} (total: ${String(this.sessionManager.count())})`);
+    log.info(
+      HttpServer.name,
+      `SSE session connected: ${sessionId} (total: ${String(this.sessionManager.count())})`,
+    );
 
     // Register all tools with the MCP server
     registerAllTools(mcpServer, this.terminalManager);
@@ -139,20 +165,24 @@ export class HttpServer {
     let initialized = false;
     const unsubscribePush = getSettings().enableContextPush
       ? this.pusher.onPush((type, payload) => {
-        if (!initialized) return;
+          if (!initialized) return;
 
-        try {
-          transport.send({
-            jsonrpc: '2.0',
-            method: 'notifications/message',
-            params: {
-              level: 'info',
-              logger: 'vscode-mcp',
-              data: { type, payload },
-            },
-          }).catch(() => undefined);
-        } catch { /* connection may have closed */ }
-      })
+          try {
+            transport
+              .send({
+                jsonrpc: '2.0',
+                method: 'notifications/message',
+                params: {
+                  level: 'info',
+                  logger: 'vscode-mcp',
+                  data: { type, payload },
+                },
+              })
+              .catch(() => undefined);
+          } catch {
+            /* connection may have closed */
+          }
+        })
       : () => undefined;
 
     // Store unsubscribe function in session
@@ -161,11 +191,16 @@ export class HttpServer {
     // Clean up on connection close
     req.on('close', () => {
       this.sessionManager.delete(sessionId);
-      log.info(HttpServer.name, `SSE session disconnected: ${sessionId} (total: ${String(this.sessionManager.count())})`);
+      log.info(
+        HttpServer.name,
+        `SSE session disconnected: ${sessionId} (total: ${String(this.sessionManager.count())})`,
+      );
     });
 
     // Enable push notifications after handshake completes
-    setTimeout(() => { initialized = true; }, 2000);
+    setTimeout(() => {
+      initialized = true;
+    }, 2000);
 
     try {
       await mcpServer.connect(transport);
@@ -174,7 +209,11 @@ export class HttpServer {
       // Clean up on connection failure
       unsubscribePush();
       this.sessionManager.delete(sessionId);
-      log.error(HttpServer.name, `Connection failed for session ${sessionId}`, err);
+      log.error(
+        HttpServer.name,
+        `Connection failed for session ${sessionId}`,
+        err,
+      );
       throw err;
     }
   }
@@ -182,7 +221,10 @@ export class HttpServer {
   /**
    * Handle POST messages to existing sessions
    */
-  private async handleMessages(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  private async handleMessages(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<void> {
     const url = new URL(req.url ?? '', `http://${SERVER_HOST}`);
     const sessionId = url.searchParams.get('sessionId') ?? '';
     const session = this.sessionManager.get(sessionId);

@@ -1,9 +1,9 @@
 // HTTP Server request handlers
 // Separated from HttpServer for better testability and organization
 
+import type { IncomingMessage, ServerResponse } from 'http';
 import { getAuthToken } from '@config/Settings.js';
 import { log } from '@utils/logger.js';
-import type { IncomingMessage, ServerResponse } from 'http';
 
 /**
  * Check if request is authorized
@@ -24,15 +24,17 @@ export function checkAuth(req: IncomingMessage): boolean {
 export function handleHealth(
   res: ServerResponse,
   sessionCount: number,
-  port: number
+  port: number,
 ): void {
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({
-    status: 'ok',
-    version: '0.2.5',
-    connectedAgents: sessionCount,
-    port,
-  }));
+  res.end(
+    JSON.stringify({
+      status: 'ok',
+      version: '0.2.5',
+      connectedAgents: sessionCount,
+      port,
+    }),
+  );
 }
 
 /**

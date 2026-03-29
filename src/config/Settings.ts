@@ -43,7 +43,7 @@ export function getServerHost(): string {
  * Callback fires when any mcpServer.* setting changes
  */
 export function onDidChangeConfig(cb: () => void): vscode.Disposable {
-  return vscode.workspace.onDidChangeConfiguration(e => {
+  return vscode.workspace.onDidChangeConfiguration((e) => {
     if (e.affectsConfiguration(CONFIG_SECTION)) cb();
   });
 }
@@ -53,11 +53,11 @@ export function onDidChangeConfig(cb: () => void): vscode.Disposable {
  * Useful for passing to components that need multiple settings
  */
 export interface McpServerSettings {
-  port: number
-  enableContextPush: boolean
-  authToken: string
-  allowedCommands: string[]
-  serverHost: string
+  port: number;
+  enableContextPush: boolean;
+  authToken: string;
+  allowedCommands: string[];
+  serverHost: string;
 }
 
 export function getSettings(): McpServerSettings {

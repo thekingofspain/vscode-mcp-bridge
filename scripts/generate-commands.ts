@@ -2,8 +2,11 @@
 // Run: node --loader ts-node/esm scripts/generate-commands.ts
 
 import * as fs from 'fs'
-import * as path from 'path'
 import * as yaml from 'js-yaml'
+import * as path from 'path'
+import * as url from 'url'
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 interface ToolDefinition {
   tool: string
@@ -127,18 +130,17 @@ async function generateCommands(): Promise<void> {
   }
 
   // Write registry
-  const registryContent = '// AUTO-GENERATED - DO NOT EDIT\n' +
+  const registryContent =
+    '// AUTO-GENERATED - DO NOT EDIT\n' +
     '// Source: src/commands/*/definition.yaml\n' +
-    '// Run: npm run generate:commands\n' +
-    '// Generated: ' + new Date().toISOString() + '\n\n' +
+    '// Run: npm run generate:commands\n\n' +
     'import { McpServer } from \'@modelcontextprotocol/sdk/server/mcp.js\'\n' +
-    'import type { Settings } from \'../../config/Settings.js\'\n' +
-    'import type { TerminalManager } from \'../../services/TerminalManager.js\'\n\n' +
+    'import { getAllowedCommands } from \'@config/Settings.js\'\n' +
+    'import type { TerminalManager } from \'@services/TerminalManager.js\'\n\n' +
     registryImports.join('\n') + '\n\n' +
     'export function registerAllTools(\n' +
     '  server: McpServer,\n' +
-    '  settings: Settings,\n' +
-    '  terminalManager: TerminalManager\n' +
+    '  terminalManager: TerminalManager,\n' +
     '): void {\n' +
     registryCalls.join('') +
     '}\n'

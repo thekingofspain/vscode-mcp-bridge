@@ -1,15 +1,20 @@
+import * as vscode from 'vscode';
 import { log } from '@utils/logger.js';
 import { getSelectionSnapshot } from '@vscode-api/window/editors.js';
 import { getActiveFileSnapshot } from '@vscode-api/workspace/documents.js';
-import * as vscode from 'vscode';
 import type { PushCallback } from './types.js';
 
-function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (...args: T) => void {
+function debounce<T extends unknown[]>(
+  fn: (...args: T) => void,
+  ms: number,
+): (...args: T) => void {
   let timer: ReturnType<typeof setTimeout>;
 
   return (...args: T) => {
     clearTimeout(timer);
-    timer = setTimeout(() => { fn(...args); }, ms);
+    timer = setTimeout(() => {
+      fn(...args);
+    }, ms);
   };
 }
 
@@ -21,17 +26,23 @@ export class ContextPusher {
     log.info(ContextPusher.name, 'Starting context pusher');
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(
-        debounce(() => { this.pushActiveFile(); }, 200)
+        debounce(() => {
+          this.pushActiveFile();
+        }, 200),
       ),
       vscode.window.onDidChangeTextEditorSelection(
-        debounce(() => { this.pushSelection(); }, 300)
+        debounce(() => {
+          this.pushSelection();
+        }, 300),
       ),
       vscode.languages.onDidChangeDiagnostics(
-        debounce(() => { void this.pushDiagnostics(); }, 500)
+        debounce(() => {
+          void this.pushDiagnostics();
+        }, 500),
       ),
-      vscode.workspace.onDidSaveTextDocument(
-        () => { this.pushActiveFile(); }
-      ),
+      vscode.workspace.onDidSaveTextDocument(() => {
+        this.pushActiveFile();
+      }),
     );
     log.info(ContextPusher.name, 'Context pusher started');
   }
@@ -49,7 +60,11 @@ export class ContextPusher {
 
   private emit(type: string, payload: unknown): void {
     for (const cb of this.callbacks) {
-      try { cb(type, payload); } catch { /* ignore */ }
+      try {
+        cb(type, payload);
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -66,7 +81,8 @@ export class ContextPusher {
   }
 
   private async pushDiagnostics(): Promise<void> {
-    const { getDiagnostics } = await import('@vscode-api/workspace/diagnostics.js');
+    const { getDiagnostics } =
+      await import('@vscode-api/workspace/diagnostics.js');
     const filtered = await getDiagnostics({ scope: 'open_files' });
 
     this.emit('diagnostics', filtered);

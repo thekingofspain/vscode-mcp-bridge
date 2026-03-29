@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
 /**
  * Logger configuration - single source of truth for log levels and priorities
@@ -26,13 +26,19 @@ export const log: Logger = (() => {
   let channel: vscode.OutputChannel | null = null;
   let level: LogLevel = 'info';
 
-  function logMessage(logLevel: LogLevel, component: string, message: string, data?: unknown): void {
+  function logMessage(
+    logLevel: LogLevel,
+    component: string,
+    message: string,
+    data?: unknown,
+  ): void {
     if (LOG_LEVELS[logLevel] >= LOG_LEVELS[level]) {
       const timestamp = new Date().toISOString().slice(11, 23);
       const prefix = `[${timestamp}] [${logLevel.toUpperCase()}] [${component}]`;
-      const line = data !== undefined
-        ? `${prefix} ${message} ${JSON.stringify(data)}`
-        : `${prefix} ${message}`;
+      const line =
+        data !== undefined
+          ? `${prefix} ${message} ${JSON.stringify(data)}`
+          : `${prefix} ${message}`;
 
       channel?.appendLine(line);
 

@@ -5,7 +5,9 @@ const decorationTypes = new Map<string, vscode.TextEditorDecorationType>();
 /**
  * Get or open a text editor for a specific file path
  */
-export async function getEditorForFile(filePath: string): Promise<vscode.TextEditor | null> {
+export async function getEditorForFile(
+  filePath: string,
+): Promise<vscode.TextEditor | null> {
   let editor = vscode.window.activeTextEditor;
 
   // Return early if already showing the correct file
@@ -24,11 +26,15 @@ export async function getEditorForFile(filePath: string): Promise<vscode.TextEdi
 /**
  * Get or create a cached decoration type for a specific color
  */
-export function getDecorationType(color: string): vscode.TextEditorDecorationType {
+export function getDecorationType(
+  color: string,
+): vscode.TextEditorDecorationType {
   let decType = decorationTypes.get(color);
 
   if (decType === undefined) {
-    decType = vscode.window.createTextEditorDecorationType({ backgroundColor: color });
+    decType = vscode.window.createTextEditorDecorationType({
+      backgroundColor: color,
+    });
     decorationTypes.set(color, decType);
   }
 

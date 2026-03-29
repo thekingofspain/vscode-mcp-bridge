@@ -1,17 +1,17 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getWorkspaceSymbols } from '@vscode-api/workspace/symbols.js';
 import { SymbolKind } from 'vscode';
+import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { WorkspaceSymbolSearchArgs } from '@type-defs/index.js';
+import { getWorkspaceSymbols } from '@vscode-api/workspace/symbols.js';
 
 function symbolKindName(kind: SymbolKind): string {
   return SymbolKind[kind];
 }
 
 export async function execute(
-  args: WorkspaceSymbolSearchArgs
+  args: WorkspaceSymbolSearchArgs,
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
   const symbols = await getWorkspaceSymbols(args.query);
-  const serialized = symbols.map(s => ({
+  const serialized = symbols.map((s) => ({
     name: s.name,
     kind: symbolKindName(s.kind),
     filePath: s.location.uri.fsPath,
@@ -23,8 +23,12 @@ export async function execute(
 }
 
 export function registerSearchWorkspaceSymbols(server: McpServer): void {
-  server.registerTool('search_workspace_symbols', {
-    description: 'Search for symbols across the entire workspace',
-    inputSchema: {}
-  }, execute as never);
+  server.registerTool(
+    'search_workspace_symbols',
+    {
+      description: 'Search for symbols across the entire workspace',
+      inputSchema: {},
+    },
+    execute as never,
+  );
 }

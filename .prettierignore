@@ -1,0 +1,11 @@
+# Auto-generated files - DO NOT EDIT
+src/mcp/tools/registry.ts
+src/commands/*/schema.ts
+src/commands/*/index.ts
+
+# Build output
+out/
+dist/
+
+# Dependencies
+node_modules/

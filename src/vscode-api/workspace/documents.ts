@@ -1,6 +1,10 @@
-import { normalizePath } from '@utils/path.js';
 import * as vscode from 'vscode';
-import type { ActiveFileSnapshot, ReadFileResult, WorkspaceInfo } from './types.js';
+import { normalizePath } from '@utils/path.js';
+import type {
+  ActiveFileSnapshot,
+  ReadFileResult,
+  WorkspaceInfo,
+} from './types.js';
 
 /**
  * Get a snapshot of the currently active text editor
@@ -26,7 +30,7 @@ export function getActiveFileSnapshot(): ActiveFileSnapshot | null {
 export async function readFile(
   filePath: string,
   startLine?: number,
-  endLine?: number
+  endLine?: number,
 ): Promise<ReadFileResult> {
   try {
     const doc = await vscode.workspace.openTextDocument(filePath);
@@ -35,7 +39,10 @@ export async function readFile(
     // Validate and normalize line numbers for range reads
     if (startLine !== undefined && endLine !== undefined) {
       const safeStart = Math.max(0, Math.min(startLine, allLines.length - 1));
-      const safeEnd = Math.max(safeStart, Math.min(endLine, allLines.length - 1));
+      const safeEnd = Math.max(
+        safeStart,
+        Math.min(endLine, allLines.length - 1),
+      );
       const sliced = allLines.slice(safeStart, safeEnd + 1);
 
       return { content: sliced.join('\n'), exists: true };
@@ -56,13 +63,16 @@ export async function openFile(
   filePath: string,
   line?: number,
   character?: number,
-  preview = false
+  preview = false,
 ): Promise<void> {
   const uri = vscode.Uri.file(filePath);
   const doc = await vscode.workspace.openTextDocument(uri);
 
   if (line !== undefined && character !== undefined) {
-    await vscode.window.showTextDocument(doc, { preview, selection: new vscode.Range(line, character, line, character) });
+    await vscode.window.showTextDocument(doc, {
+      preview,
+      selection: new vscode.Range(line, character, line, character),
+    });
   } else {
     await vscode.window.showTextDocument(doc, { preview });
   }
@@ -72,11 +82,13 @@ export async function openFile(
  * Close a file tab in VS Code
  * Handles multiple tab types and normalizes path comparison
  */
-export async function closeFile(filePath: string): Promise<{ closed: boolean; filePath: string }> {
+export async function closeFile(
+  filePath: string,
+): Promise<{ closed: boolean; filePath: string }> {
   const targetPath = normalizePath(filePath);
   const tabsToClose = vscode.window.tabGroups.all
-    .flatMap(g => g.tabs)
-    .filter(t => {
+    .flatMap((g) => g.tabs)
+    .filter((t) => {
       const input = t.input as vscode.TabInputText | { uri?: vscode.Uri };
 
       if (input instanceof vscode.TabInputText) {
@@ -103,7 +115,8 @@ export async function closeFile(filePath: string): Promise<{ closed: boolean; fi
  */
 export function getWorkspaceInfo(): WorkspaceInfo {
   return {
-    workspaceFolders: vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath) ?? [],
+    workspaceFolders:
+      vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) ?? [],
     workspaceFile: vscode.workspace.workspaceFile?.fsPath,
   };
 }

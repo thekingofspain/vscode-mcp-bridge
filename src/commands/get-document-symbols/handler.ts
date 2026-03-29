@@ -1,15 +1,14 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getDocumentSymbols } from '@vscode-api/workspace/symbols.js';
-import { SymbolKind } from 'vscode';
-import type { DocumentSymbol } from 'vscode';
+import { SymbolKind, type DocumentSymbol } from 'vscode';
+import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { DocumentSymbolsArgs } from '@type-defs/index.js';
+import { getDocumentSymbols } from '@vscode-api/workspace/symbols.js';
 
 function symbolKindName(kind: SymbolKind): string {
   return SymbolKind[kind];
 }
 
 function serializeSymbols(symbols: DocumentSymbol[]): unknown {
-  return symbols.map(s => ({
+  return symbols.map((s) => ({
     name: s.name,
     kind: symbolKindName(s.kind),
     startLine: s.range.start.line,
@@ -20,7 +19,7 @@ function serializeSymbols(symbols: DocumentSymbol[]): unknown {
 }
 
 export async function execute(
-  args: DocumentSymbolsArgs
+  args: DocumentSymbolsArgs,
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
   const symbols = await getDocumentSymbols(args.filePath);
   const serialized = serializeSymbols(symbols);
@@ -29,8 +28,13 @@ export async function execute(
 }
 
 export function registerGetDocumentSymbols(server: McpServer): void {
-  server.registerTool('get_document_symbols', {
-    description: 'Get all symbols (functions, classes, variables, etc.) in a file',
-    inputSchema: {}
-  }, execute as never);
+  server.registerTool(
+    'get_document_symbols',
+    {
+      description:
+        'Get all symbols (functions, classes, variables, etc.) in a file',
+      inputSchema: {},
+    },
+    execute as never,
+  );
 }

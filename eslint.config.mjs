@@ -1,10 +1,11 @@
 import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import stylistic from '@stylistic/eslint-plugin';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
   {
     plugins: {
       '@stylistic': stylistic,
@@ -23,10 +24,26 @@ export default tseslint.config(
         // But allow consecutive variable declarations to stay together
         { blankLine: 'never', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
       ],
+      // Allow control characters in regex for ANSI escape sequence stripping (TerminalManager.ts)
+      'no-control-regex': 'off',
+      // Enforce consistent type imports (TypeScript 5.7 best practice)
+      // Prefer type imports for type-only usage
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          disallowTypeAnnotations: true,
+          fixStyle: 'inline-type-imports',
+        },
+      ],
+      // Enforce consistent type exports
+      '@typescript-eslint/consistent-type-exports': [
+        'error',
+        {
+          fixMixedExportsWithInlineTypeSpecifier: true,
+        },
+      ],
     },
-  },
-  ...tseslint.configs.stylisticTypeChecked,
-  {
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -35,6 +52,18 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["out/", "node_modules/", "esbuild.config.js", "eslint.config.mjs", "scripts/**", "types/"]
+    ignores: [
+      'out/',
+      'node_modules/',
+      'esbuild.config.js',
+      'eslint.config.mjs',
+      'prettier.config.js',
+      'scripts/**',
+      'types/',
+      // Auto-generated files
+      'src/commands/*/schema.ts',
+      'src/commands/*/index.ts',
+      'src/mcp/tools/registry.ts',
+    ]
   }
 );

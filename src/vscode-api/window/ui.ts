@@ -1,5 +1,5 @@
-import type { MessageSeverity } from '@type-defs/index.js';
 import * as vscode from 'vscode';
+import type { MessageSeverity } from '@type-defs/index.js';
 
 /**
  * Display a notification message to the user in the VS Code UI
@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 export async function showMessage(
   message: string,
   level: MessageSeverity = 'info',
-  items: string[] = []
+  items: string[] = [],
 ): Promise<string | undefined> {
   if (level === 'error') {
     return items.length > 0
@@ -30,9 +30,12 @@ export async function showMessage(
 export async function showQuickPick(
   items: string[],
   placeHolder?: string,
-  canPickMany = false
+  canPickMany = false,
 ): Promise<string[] | string | undefined> {
-  const result = await vscode.window.showQuickPick(items, { placeHolder, canPickMany });
+  const result = await vscode.window.showQuickPick(items, {
+    placeHolder,
+    canPickMany,
+  });
 
   if (!result) return undefined;
 
@@ -47,7 +50,7 @@ export async function showQuickPick(
 export async function requestInput(
   prompt: string,
   placeHolder?: string,
-  value?: string
+  value?: string,
 ): Promise<string | undefined> {
   return vscode.window.showInputBox({ prompt, placeHolder, value });
 }

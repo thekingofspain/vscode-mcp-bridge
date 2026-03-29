@@ -8,7 +8,7 @@ export async function getCodeActions(
   startLine: number,
   startChar: number,
   endLine: number,
-  endChar: number
+  endChar: number,
 ): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> {
   const uri = vscode.Uri.file(filePath);
   const range = new vscode.Range(startLine, startChar, endLine, endChar);
@@ -16,7 +16,7 @@ export async function getCodeActions(
   return vscode.commands.executeCommand<(vscode.Command | vscode.CodeAction)[]>(
     'vscode.executeCodeActionProvider',
     uri,
-    range
+    range,
   );
 }
 
@@ -29,12 +29,19 @@ export async function applyCodeAction(
   startChar: number,
   endLine: number,
   endChar: number,
-  actionIndex: number
+  actionIndex: number,
 ): Promise<{ applied: boolean; title: string }> {
-  const actions = await getCodeActions(filePath, startLine, startChar, endLine, endChar);
+  const actions = await getCodeActions(
+    filePath,
+    startLine,
+    startChar,
+    endLine,
+    endChar,
+  );
   const action = actions?.[actionIndex];
 
-  if (action === undefined) throw new Error(`No code action at index ${String(actionIndex)}`);
+  if (action === undefined)
+    throw new Error(`No code action at index ${String(actionIndex)}`);
 
   let applied = false;
 
@@ -42,7 +49,10 @@ export async function applyCodeAction(
     await vscode.workspace.applyEdit(action.edit);
     applied = true;
   } else if ('command' in action && action.command) {
-    const cmd = typeof action.command === 'string' ? action.command : action.command.command;
+    const cmd =
+      typeof action.command === 'string'
+        ? action.command
+        : action.command.command;
 
     await vscode.commands.executeCommand(cmd);
     applied = true;

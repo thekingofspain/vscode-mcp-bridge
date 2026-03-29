@@ -1,6 +1,6 @@
-import { getEditorForFile } from '@vscode-api/window/utils.js';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { getEditorForFile } from '@vscode-api/window/utils.js';
 import type { OpenTab, SelectionSnapshot } from './types.js';
 
 /**
@@ -37,7 +37,9 @@ export function getOpenTabs(): OpenTab[] {
       const input = tab.input as vscode.TabInputText | vscode.TabInputTextDiff;
 
       if (input instanceof vscode.TabInputText) {
-        const doc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === input.uri.fsPath);
+        const doc = vscode.workspace.textDocuments.find(
+          (d) => d.uri.fsPath === input.uri.fsPath,
+        );
 
         tabs.push({
           path: input.uri.fsPath,
@@ -48,10 +50,13 @@ export function getOpenTabs(): OpenTab[] {
           type: 'file',
         });
       } else if (input instanceof vscode.TabInputTextDiff) {
-        const uri = input.original.scheme === 'file' ? input.original : input.modified;
+        const uri =
+          input.original.scheme === 'file' ? input.original : input.modified;
 
         if (uri.scheme === 'file') {
-          const doc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === uri.fsPath);
+          const doc = vscode.workspace.textDocuments.find(
+            (d) => d.uri.fsPath === uri.fsPath,
+          );
 
           tabs.push({
             path: uri.fsPath,
@@ -72,7 +77,11 @@ export function getOpenTabs(): OpenTab[] {
 /**
  * Show a visual diff in VS Code before applying file changes
  */
-export async function showDiff(filePath: string, newContent: string, title?: string): Promise<void> {
+export async function showDiff(
+  filePath: string,
+  newContent: string,
+  title?: string,
+): Promise<void> {
   const uri = vscode.Uri.file(filePath);
   const doc = await vscode.workspace.openTextDocument(uri);
 
@@ -81,7 +90,7 @@ export async function showDiff(filePath: string, newContent: string, title?: str
   const edit = new vscode.WorkspaceEdit();
   const fullRange = new vscode.Range(
     new vscode.Position(0, 0),
-    doc.positionAt(doc.getText().length)
+    doc.positionAt(doc.getText().length),
   );
 
   edit.replace(uri, fullRange, newContent);
@@ -96,7 +105,7 @@ export async function showDiff(filePath: string, newContent: string, title?: str
     uri,
     memFsUri,
     title ?? `${path.basename(filePath)}: Original ↔ Modified`,
-    { preview: false }
+    { preview: false },
   );
 }
 
@@ -107,7 +116,7 @@ export async function addEditorDecoration(
   filePath: string,
   startLine: number,
   endLine: number,
-  color = 'rgba(255, 255, 0, 0.3)'
+  color = 'rgba(255, 255, 0, 0.3)',
 ): Promise<boolean> {
   const editor = await getEditorForFile(filePath);
 

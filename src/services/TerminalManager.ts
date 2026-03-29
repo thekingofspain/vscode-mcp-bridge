@@ -27,7 +27,9 @@ export class TerminalManager {
     this.logDir = path.join(os.tmpdir(), 'vscode-mcp-terminals');
     fs.mkdirSync(this.logDir, { recursive: true });
     // Run cleanup asynchronously to avoid blocking extension initialization
-    setImmediate(() => { this.cleanupStaleLogFiles(); });
+    setImmediate(() => {
+      this.cleanupStaleLogFiles();
+    });
   }
 
   private cleanupStaleLogFiles(): void {
@@ -42,7 +44,12 @@ export class TerminalManager {
       }
 
       if (files.length > 0) {
-        log.info(TerminalManager.name, 'Cleaned up ' + String(files.length) + ' stale log file(s) from previous session');
+        log.info(
+          TerminalManager.name,
+          'Cleaned up ' +
+          String(files.length) +
+          ' stale log file(s) from previous session',
+        );
       }
     } catch (err) {
       log.warn(TerminalManager.name, 'Failed to clean up stale log files', err);
@@ -64,7 +71,9 @@ export class TerminalManager {
   private validateCommand(command: string): void {
     for (const pattern of DANGEROUS_PATTERNS) {
       if (pattern.test(command)) {
-        throw new Error(`Command contains dangerous patterns matching: ${pattern.toString()}`);
+        throw new Error(
+          `Command contains dangerous patterns matching: ${pattern.toString()}`,
+        );
       }
     }
   }
@@ -72,26 +81,44 @@ export class TerminalManager {
   /**
    * Run a short-lived shell command and capture output
    */
-  async runCommand(command: string, cwd?: string, timeoutMs = 30000): Promise<TerminalResult> {
+  async runCommand(
+    command: string,
+    cwd?: string,
+    timeoutMs = 30000,
+  ): Promise<TerminalResult> {
     // Validate command for dangerous patterns
     this.validateCommand(command);
 
-    const workingDir = cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+    const workingDir =
+      cwd ??
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ??
+      process.cwd();
 
     return new Promise((resolve) => {
-      exec(command, { cwd: workingDir, timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
-        resolve({
-          stdout: stdout,
-          stderr: stderr,
-          exitCode: err?.code ?? 0,
-        });
-      });
+      exec(
+        command,
+        { cwd: workingDir, timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
+        (err, stdout, stderr) => {
+          resolve({
+            stdout: stdout,
+            stderr: stderr,
+            exitCode: err?.code ?? 0,
+          });
+        },
+      );
     });
   }
 
-  spawn(name: string, command?: string, cwd?: string): { id: string; name: string } {
+  spawn(
+    name: string,
+    command?: string,
+    cwd?: string,
+  ): { id: string; name: string } {
     const id = `term_${String(this.nextId++)}`;
-    const workingDir = cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
+    const workingDir =
+      cwd ??
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ??
+      process.cwd();
     const logFile = path.join(this.logDir, `${id}.log`);
     const displayName = name || `Task ${id}`;
     // Launch script directly as the terminal shell so setup is invisible
@@ -149,14 +176,14 @@ export class TerminalManager {
   }
 
   list(): {
-    id: string
-    name: string
-    alive: boolean
-    cwd: string
-    createdAt: number
-    logSize: number
+    id: string;
+    name: string;
+    alive: boolean;
+    cwd: string;
+    createdAt: number;
+    logSize: number;
   }[] {
-    return Array.from(this.terminals.values()).map(t => ({
+    return Array.from(this.terminals.values()).map((t) => ({
       id: t.id,
       name: t.name,
       alive: t.alive,
@@ -166,7 +193,10 @@ export class TerminalManager {
     }));
   }
 
-  readOutput(id: string, lines?: number): { output: string; alive: boolean; totalBytes: number } | null {
+  readOutput(
+    id: string,
+    lines?: number,
+  ): { output: string; alive: boolean; totalBytes: number } | null {
     const managed = this.terminals.get(id);
 
     if (!managed) return null;
@@ -199,7 +229,11 @@ export class TerminalManager {
         output = allLines.slice(-lines).join('\n');
       }
     } catch (err) {
-      log.debug(TerminalManager.name, `Could not read log for ${id}`, (err as Error).message);
+      log.debug(
+        TerminalManager.name,
+        `Could not read log for ${id}`,
+        (err as Error).message,
+      );
     }
 
     return { output, alive: managed.alive, totalBytes };
@@ -237,7 +271,11 @@ export class TerminalManager {
   }
 
   // Poll the log file until content appears (shell has started), then fire callback
-  private waitForReady(logFile: string, callback: () => void, attempt = 0): void {
+  private waitForReady(
+    logFile: string,
+    callback: () => void,
+    attempt = 0,
+  ): void {
     const maxAttempts = 50; // 50 * 100ms = 5s max wait
 
     setTimeout(() => {
@@ -249,7 +287,10 @@ export class TerminalManager {
       } else if (canRetry) {
         this.waitForReady(logFile, callback, attempt + 1);
       } else {
-        log.warn(TerminalManager.name, `Shell did not become ready after 5s, sending command anyway`);
+        log.warn(
+          TerminalManager.name,
+          `Shell did not become ready after 5s, sending command anyway`,
+        );
         callback();
       }
     }, 100);
@@ -274,7 +315,9 @@ export class TerminalManager {
 
   // Strip ANSI escape sequences and control characters from terminal output
   private stripAnsi(text: string): string {
-    // eslint-disable-next-line no-control-regex
-    return text.replace(/\x1b\[[0-9;?]*[a-zA-Z]|\x1b\][^\x07]*(?:\x07|\x1b\\)|\x1b[()][0-9A-B]|\x1b[=>]|\x08.|\r/g, '');
+    return text.replace(
+      /\x1b\[[0-9;?]*[a-zA-Z]|\x1b\][^\x07]*(?:\x07|\x1b\\)|\x1b[()][0-9A-B]|\x1b[=>]|\x08.|\r/g,
+      '',
+    );
   }
 }

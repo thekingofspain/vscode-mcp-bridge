@@ -1,9 +1,13 @@
-import { getSettings, isContextPushEnabled, onDidChangeConfig } from '@config/Settings.js';
+import * as vscode from 'vscode';
+import {
+  getSettings,
+  isContextPushEnabled,
+  onDidChangeConfig,
+} from '@config/Settings.js';
 import { HttpServer, SERVER_HOST } from '@mcp/server/HttpServer.js';
 import { ContextPusher } from '@services/ContextPusher.js';
 import { TerminalManager } from '@services/TerminalManager.js';
 import { log } from '@utils/logger.js';
-import * as vscode from 'vscode';
 
 // Status bar update interval (ms) - balances responsiveness with performance
 const STATUS_BAR_UPDATE_INTERVAL = 2000;
@@ -13,7 +17,9 @@ let contextPusher: ContextPusher | undefined;
 let terminalManager: TerminalManager | undefined;
 let statusUpdateInterval: NodeJS.Timeout | undefined;
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(
+  context: vscode.ExtensionContext,
+): Promise<void> {
   const outputChannel = vscode.window.createOutputChannel('MCP Bridge');
 
   context.subscriptions.push(outputChannel);
@@ -32,7 +38,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   // Status bar item
-  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100,
+  );
   statusBarItem.command = 'mcpServer.showStatus';
   context.subscriptions.push(statusBarItem);
 
@@ -51,10 +60,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       updateStatusBar(actualPort, 0);
       log.info('Server', `HTTP server listening on port ${String(actualPort)}`);
-      vscode.window.showInformationMessage(`MCP Server running on http://${SERVER_HOST}:${String(actualPort)}`);
+      vscode.window.showInformationMessage(
+        `MCP Server running on http://${SERVER_HOST}:${String(actualPort)}`,
+      );
     } catch (err) {
       log.error('Server', `Failed to start HTTP server`, err);
-      vscode.window.showErrorMessage(`MCP Server failed to start: ${String(err)}`);
+      vscode.window.showErrorMessage(
+        `MCP Server failed to start: ${String(err)}`,
+      );
       updateStatusBar(0, 0, true);
     }
   }
@@ -74,7 +87,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     if (error) {
       statusBarItem.text = '$(error) MCP Error';
       statusBarItem.tooltip = 'MCP Server failed to start. Click for options.';
-      statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+      statusBarItem.backgroundColor = new vscode.ThemeColor(
+        'statusBarItem.errorBackground',
+      );
     } else if (port === 0) {
       statusBarItem.text = '$(circle-slash) MCP Stopped';
       statusBarItem.tooltip = 'MCP Server is stopped. Click to start.';
@@ -102,7 +117,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         clearInterval(statusUpdateInterval);
         statusUpdateInterval = undefined;
       }
-    }
+    },
   });
 
   // Register commands
@@ -126,7 +141,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('mcpServer.showStatus', async () => {
       if (!httpServer || httpServer.port === 0) {
-        const choice = await vscode.window.showQuickPick(['Start Server'], { placeHolder: 'MCP Server is stopped' });
+        const choice = await vscode.window.showQuickPick(['Start Server'], {
+          placeHolder: 'MCP Server is stopped',
+        });
 
         if (choice === 'Start Server') await startServer();
 
@@ -135,8 +152,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       const url = `http://${SERVER_HOST}:${String(httpServer.port)}/sse`;
       const choice = await vscode.window.showQuickPick(
-        [`Connected agents: ${String(httpServer.connectionCount)}`, 'Copy connection URL', 'Stop server'],
-        { placeHolder: `MCP Server on port ${String(httpServer.port)}` }
+        [
+          `Connected agents: ${String(httpServer.connectionCount)}`,
+          'Copy connection URL',
+          'Stop server',
+        ],
+        { placeHolder: `MCP Server on port ${String(httpServer.port)}` },
       );
 
       if (choice === 'Copy connection URL') {
@@ -163,11 +184,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
           await startServer();
         } catch (err) {
-          log.error('Extension', 'Failed to restart server on settings change', err);
-          vscode.window.showErrorMessage('Failed to restart MCP server after settings change');
+          log.error(
+            'Extension',
+            'Failed to restart server on settings change',
+            err,
+          );
+          vscode.window.showErrorMessage(
+            'Failed to restart MCP server after settings change',
+          );
         }
       })();
-    })
+    }),
   );
 
   // Auto-start

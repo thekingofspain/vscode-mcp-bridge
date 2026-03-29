@@ -1,3 +1,3 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
-export const GetWorkspaceInfoInputSchema = z.object({});
+export const GetWorkspaceInfoInputSchema = z.object({})

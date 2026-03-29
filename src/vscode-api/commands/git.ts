@@ -7,7 +7,7 @@ import type { GitActionResult, GitOperation } from './types.js';
 export async function gitAction(
   operation: GitOperation,
   branchName?: string,
-  commitMessage?: string
+  commitMessage?: string,
 ): Promise<GitActionResult> {
   const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
@@ -20,17 +20,20 @@ export async function gitAction(
       cmd = 'git status';
       break;
     case 'commit':
-      if (commitMessage === undefined) return { success: false, output: 'Commit message is required.' };
+      if (commitMessage === undefined)
+        return { success: false, output: 'Commit message is required.' };
 
       cmd = `git commit -m "${commitMessage.replace(/"/g, '\\"')}"`;
       break;
     case 'checkout':
-      if (branchName === undefined) return { success: false, output: 'Branch name is required.' };
+      if (branchName === undefined)
+        return { success: false, output: 'Branch name is required.' };
 
       cmd = `git checkout ${branchName}`;
       break;
     case 'branch':
-      if (branchName === undefined) return { success: false, output: 'Branch name is required.' };
+      if (branchName === undefined)
+        return { success: false, output: 'Branch name is required.' };
 
       cmd = `git branch ${branchName}`;
       break;
@@ -47,6 +50,9 @@ export async function gitAction(
 
     return { success: true, output: result };
   } catch (e) {
-    return { success: false, output: e instanceof Error ? e.message : String(e) };
+    return {
+      success: false,
+      output: e instanceof Error ? e.message : String(e),
+    };
   }
 }

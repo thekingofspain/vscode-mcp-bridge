@@ -1,19 +1,23 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getImplementation } from '@vscode-api/languages/definitions.js';
+import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { FilePosition } from '@type-defs/index.js';
+import { getImplementation } from '@vscode-api/languages/definitions.js';
 
 export async function execute(
-  args: FilePosition
+  args: FilePosition,
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
-  const defs = await getImplementation(args.filePath, args.line, args.character);
-  const serialized = defs.map(d => {
+  const defs = await getImplementation(
+    args.filePath,
+    args.line,
+    args.character,
+  );
+  const serialized = defs.map((d) => {
     if ('uri' in d) {
       return {
         filePath: d.uri.fsPath,
         startLine: d.range.start.line,
         startChar: d.range.start.character,
         endLine: d.range.end.line,
-        endChar: d.range.end.character
+        endChar: d.range.end.character,
       };
     }
 
@@ -22,7 +26,7 @@ export async function execute(
       startLine: d.targetRange.start.line,
       startChar: d.targetRange.start.character,
       endLine: d.targetRange.end.line,
-      endChar: d.targetRange.end.character
+      endChar: d.targetRange.end.character,
     };
   });
 
@@ -30,8 +34,13 @@ export async function execute(
 }
 
 export function registerGoToImplementation(server: McpServer): void {
-  server.registerTool('go_to_implementation', {
-    description: 'Get the implementation location(s) of a symbol at a given position using LSP',
-    inputSchema: {}
-  }, execute as never);
+  server.registerTool(
+    'go_to_implementation',
+    {
+      description:
+        'Get the implementation location(s) of a symbol at a given position using LSP',
+      inputSchema: {},
+    },
+    execute as never,
+  );
 }

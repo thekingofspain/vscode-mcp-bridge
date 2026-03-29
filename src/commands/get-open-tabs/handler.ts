@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getOpenTabs } from '@vscode-api/window/editors.js';
 
 export function execute(): { content: [{ type: 'text'; text: string }] } {
@@ -8,8 +8,12 @@ export function execute(): { content: [{ type: 'text'; text: string }] } {
 }
 
 export function registerGetOpenTabs(server: McpServer): void {
-  server.registerTool('get_open_tabs', {
-    description: 'Get all currently open file tabs in VS Code',
-    inputSchema: {}
-  }, execute as never);
+  server.registerTool(
+    'get_open_tabs',
+    {
+      description: 'Get all currently open file tabs in VS Code',
+      inputSchema: {},
+    },
+    execute as never,
+  );
 }

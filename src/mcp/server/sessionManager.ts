@@ -1,17 +1,17 @@
 // Session management for MCP server connections
 // Functional implementation using closure-based state
 
+import { randomUUID } from 'crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { log } from '@utils/logger.js';
-import { randomUUID } from 'crypto';
 import type { SessionEntry } from './types.js';
 
 /**
  * Session state container
  */
 interface SessionState {
-  sessions: Map<string, SessionEntry>
+  sessions: Map<string, SessionEntry>;
 }
 
 /**
@@ -19,12 +19,16 @@ interface SessionState {
  * Returns an object with session management functions
  */
 export function createSessionManager(): {
-  count: () => number
-  get: (sessionId: string) => SessionEntry | undefined
-  create: (instructions: string) => { sessionId: string; transport: StreamableHTTPServerTransport; mcpServer: McpServer }
-  updateSession: (sessionId: string, unsubscribePush: () => void) => void
-  delete: (sessionId: string) => void
-  clear: () => void
+  count: () => number;
+  get: (sessionId: string) => SessionEntry | undefined;
+  create: (instructions: string) => {
+    sessionId: string;
+    transport: StreamableHTTPServerTransport;
+    mcpServer: McpServer;
+  };
+  updateSession: (sessionId: string, unsubscribePush: () => void) => void;
+  delete: (sessionId: string) => void;
+  clear: () => void;
 } {
   const state: SessionState = { sessions: new Map() };
 
@@ -36,19 +40,30 @@ export function createSessionManager(): {
     return state.sessions.get(sessionId);
   }
 
-  function create(instructions: string): { sessionId: string; transport: StreamableHTTPServerTransport; mcpServer: McpServer } {
+  function create(instructions: string): {
+    sessionId: string;
+    transport: StreamableHTTPServerTransport;
+    mcpServer: McpServer;
+  } {
     const sessionId = randomUUID();
     const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => sessionId
+      sessionIdGenerator: () => sessionId,
     });
     const mcpServer = new McpServer(
       { name: 'vscode-mcp-bridge', version: '0.2.5' },
-      { instructions }
+      { instructions },
     );
 
-    state.sessions.set(sessionId, { transport, unsubscribePush: () => undefined, mcpServer });
+    state.sessions.set(sessionId, {
+      transport,
+      unsubscribePush: () => undefined,
+      mcpServer,
+    });
 
-    log.info('Server', `SSE session connected: ${sessionId} (total: ${String(count())})`);
+    log.info(
+      'Server',
+      `SSE session connected: ${sessionId} (total: ${String(count())})`,
+    );
 
     return { sessionId, transport, mcpServer };
   }
@@ -67,7 +82,10 @@ export function createSessionManager(): {
     if (session) {
       session.unsubscribePush();
       state.sessions.delete(sessionId);
-      log.info('Server', `SSE session disconnected: ${sessionId} (total: ${String(count())})`);
+      log.info(
+        'Server',
+        `SSE session disconnected: ${sessionId} (total: ${String(count())})`,
+      );
     }
   }
 

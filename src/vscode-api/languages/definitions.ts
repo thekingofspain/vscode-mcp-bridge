@@ -6,16 +6,14 @@ import * as vscode from 'vscode';
 export async function getDefinition(
   filePath: string,
   line: number,
-  char: number
+  char: number,
 ): Promise<(vscode.Location | vscode.LocationLink)[]> {
   const uri = vscode.Uri.file(filePath);
   const pos = new vscode.Position(line, char);
 
-  return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
-    'vscode.executeDefinitionProvider',
-    uri,
-    pos
-  );
+  return vscode.commands.executeCommand<
+    (vscode.Location | vscode.LocationLink)[]
+  >('vscode.executeDefinitionProvider', uri, pos);
 }
 
 /**
@@ -24,16 +22,14 @@ export async function getDefinition(
 export async function getTypeDefinition(
   filePath: string,
   line: number,
-  char: number
+  char: number,
 ): Promise<(vscode.Location | vscode.LocationLink)[]> {
   const uri = vscode.Uri.file(filePath);
   const pos = new vscode.Position(line, char);
 
-  return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
-    'vscode.executeTypeDefinitionProvider',
-    uri,
-    pos
-  );
+  return vscode.commands.executeCommand<
+    (vscode.Location | vscode.LocationLink)[]
+  >('vscode.executeTypeDefinitionProvider', uri, pos);
 }
 
 /**
@@ -42,14 +38,12 @@ export async function getTypeDefinition(
 export async function getImplementation(
   filePath: string,
   line: number,
-  char: number
+  char: number,
 ): Promise<(vscode.Location | vscode.LocationLink)[]> {
   const uri = vscode.Uri.file(filePath);
   const pos = new vscode.Position(line, char);
 
-  return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
-    'vscode.executeImplementationProvider',
-    uri,
-    pos
-  );
+  return vscode.commands.executeCommand<
+    (vscode.Location | vscode.LocationLink)[]
+  >('vscode.executeImplementationProvider', uri, pos);
 }

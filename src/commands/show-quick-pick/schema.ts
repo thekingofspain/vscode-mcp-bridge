@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 export const ShowQuickPickInputSchema = z.object({
-  items: z.array(z.string()).describe("The list of options to display"),
+  items: z.array(z.unknown()).describe("The list of options to display"),
   placeHolder: z.string().optional().describe("Prompt text shown in the input box"),
   canPickMany: z.boolean().optional().default(false).describe("Allow selecting multiple items"),
-});
+})

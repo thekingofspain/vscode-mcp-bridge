@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getWorkspaceInfo } from '@vscode-api/workspace/documents.js';
 
 export function execute(): { content: [{ type: 'text'; text: string }] } {
@@ -8,8 +8,12 @@ export function execute(): { content: [{ type: 'text'; text: string }] } {
 }
 
 export function registerGetWorkspaceInfo(server: McpServer): void {
-  server.registerTool('get_workspace_info', {
-    description: 'Get information about the current VS Code workspace',
-    inputSchema: {}
-  }, execute as never);
+  server.registerTool(
+    'get_workspace_info',
+    {
+      description: 'Get information about the current VS Code workspace',
+      inputSchema: {},
+    },
+    execute as never,
+  );
 }
