@@ -45,7 +45,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
       log.info('Server', `Starting HTTP server on port ${String(port)}`);
 
-      if (!httpServer) return;
+      if (httpServer === undefined) return;
 
       const actualPort = await httpServer.start(port);
 
@@ -69,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   function updateStatusBar(port: number, agents: number, error = false): void {
-    if (!statusBarItem) return;
+    if (statusBarItem === undefined) return;
 
     if (error) {
       statusBarItem.text = '$(error) MCP Error';

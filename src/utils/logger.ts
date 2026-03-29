@@ -27,7 +27,9 @@ export const log: Logger = (() => {
   let level: LogLevel = 'info';
 
   function logMessage(logLevel: LogLevel, component: string, message: string, data?: unknown): void {
-    if (LOG_LEVELS[logLevel] < LOG_LEVELS[level]) return;
+    const shouldLog = LOG_LEVELS[logLevel] >= LOG_LEVELS[level];
+
+    if (!shouldLog) return;
 
     const timestamp = new Date().toISOString().slice(11, 23);
     const prefix = `[${timestamp}] [${logLevel.toUpperCase()}] [${component}]`;

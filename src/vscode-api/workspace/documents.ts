@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
 import { normalizePath } from '@utils/path.js';
-import type { ActiveFileSnapshot, WorkspaceInfo, ReadFileResult } from './types.js';
+import * as vscode from 'vscode';
+import type { ActiveFileSnapshot, ReadFileResult, WorkspaceInfo } from './types.js';
 
 /**
  * Get a snapshot of the currently active text editor
@@ -8,7 +8,7 @@ import type { ActiveFileSnapshot, WorkspaceInfo, ReadFileResult } from './types.
 export function getActiveFileSnapshot(): ActiveFileSnapshot | null {
   const editor = vscode.window.activeTextEditor;
 
-  if (!editor) return null;
+  if (editor === undefined) return null;
 
   return {
     path: editor.document.uri.fsPath,

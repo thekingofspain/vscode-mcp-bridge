@@ -1,7 +1,7 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
 import { getEditorForFile } from '@vscode-api/window/utils.js';
-import type { SelectionSnapshot, OpenTab } from './types.js';
+import * as path from 'path';
+import * as vscode from 'vscode';
+import type { OpenTab, SelectionSnapshot } from './types.js';
 
 /**
  * Get the current text selection and cursor position
@@ -9,7 +9,7 @@ import type { SelectionSnapshot, OpenTab } from './types.js';
 export function getSelectionSnapshot(): SelectionSnapshot | null {
   const editor = vscode.window.activeTextEditor;
 
-  if (!editor) return null;
+  if (editor === undefined) return null;
 
   const selection = editor.selection;
   const selectedText = editor.document.getText(selection);
@@ -111,7 +111,7 @@ export async function addEditorDecoration(
 ): Promise<boolean> {
   const editor = await getEditorForFile(filePath);
 
-  if (!editor) return false;
+  if (editor === null) return false;
 
   const range = new vscode.Range(startLine, 0, endLine, Number.MAX_VALUE);
   const decorationType = vscode.window.createTextEditorDecorationType({

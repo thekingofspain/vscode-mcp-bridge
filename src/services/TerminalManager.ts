@@ -169,7 +169,7 @@ export class TerminalManager {
   readOutput(id: string, lines?: number): { output: string; alive: boolean; totalBytes: number } | null {
     const managed = this.terminals.get(id);
 
-    if (!managed) return null;
+    if (managed === undefined) return null;
 
     let output = '';
     let totalBytes = 0;
@@ -217,7 +217,7 @@ export class TerminalManager {
   kill(id: string): boolean {
     const managed = this.terminals.get(id);
 
-    if (!managed) return false;
+    if (managed === undefined) return false;
 
     log.info(TerminalManager.name, `Killing terminal: ${id}`);
 

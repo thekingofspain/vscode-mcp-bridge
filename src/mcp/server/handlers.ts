@@ -11,7 +11,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 export function checkAuth(req: IncomingMessage): boolean {
   const token = getAuthToken();
 
-  if (!token) return true;
+  if (token === '') return true;
 
   const header = req.headers.authorization ?? '';
 

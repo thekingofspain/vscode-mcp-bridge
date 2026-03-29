@@ -1,5 +1,5 @@
+import { getDecorationType, getEditorForFile } from '@vscode-api/window/utils.js';
 import * as vscode from 'vscode';
-import { getEditorForFile, getDecorationType } from '@vscode-api/window/utils.js';
 
 /**
  * Add a decoration to specific lines in an editor
@@ -12,7 +12,7 @@ export async function addEditorDecoration(
 ): Promise<boolean> {
   const editor = await getEditorForFile(filePath);
 
-  if (!editor) return false;
+  if (editor === null) return false;
 
   const range = new vscode.Range(startLine, 0, endLine, Number.MAX_VALUE);
   const decType = getDecorationType(color);
