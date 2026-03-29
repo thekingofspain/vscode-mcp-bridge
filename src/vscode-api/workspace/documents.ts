@@ -84,7 +84,7 @@ export async function closeFile(filePath: string): Promise<{ closed: boolean; fi
     return { closed: false, filePath }
   }
 
-  const success = await vscode.window.tabGroups.close(
+  const closedTabs = await vscode.window.tabGroups.close(
     vscode.window.tabGroups.all
       .flatMap(g => g.tabs)
       .filter(t => {
@@ -93,7 +93,7 @@ export async function closeFile(filePath: string): Promise<{ closed: boolean; fi
       })
   )
 
-  return { closed: success.length > 0, filePath }
+  return { closed: closedTabs.length > 0, filePath }
 }
 
 /**

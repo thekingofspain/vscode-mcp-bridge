@@ -63,7 +63,7 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
   for (const [uri, diags] of allDiags) {
     if (uri.scheme !== 'file') continue
-    
+
     const fsPath = uri.fsPath
     if (urisToFilter && !urisToFilter.has(fsPath)) continue
 
@@ -76,12 +76,14 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
       const mappedSeverity = severityMap[d.severity] ?? 'information'
       if (minLevel >= 0 && levels.indexOf(mappedSeverity) < minLevel) continue
 
+      const codeValue = typeof d.code === 'object' && d.code !== null ? (d.code as { value: string | number }).value : d.code
+
       results.push({
         filePath: fsPath,
         severity: mappedSeverity,
         message: d.message,
         source: d.source ?? 'unknown',
-        code: d.code ?? null,
+        code: codeValue ?? null,
         startLine: d.range.start.line,
         startChar: d.range.start.character,
         endLine: d.range.end.line,

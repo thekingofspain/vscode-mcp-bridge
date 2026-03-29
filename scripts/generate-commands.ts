@@ -126,9 +126,15 @@ async function generateCommands(): Promise<void> {
     '// Source: src/commands/*/definition.yaml\n' +
     '// Run: npm run generate:commands\n' +
     '// Generated: ' + new Date().toISOString() + '\n\n' +
-    'import { McpServer } from \'@modelcontextprotocol/sdk/server/mcp.js\'\n\n' +
+    'import { McpServer } from \'@modelcontextprotocol/sdk/server/mcp.js\'\n' +
+    'import type { Settings } from \'../../config/Settings.js\'\n' +
+    'import type { TerminalManager } from \'../../services/TerminalManager.js\'\n\n' +
     registryImports.join('\n') + '\n\n' +
-    'export function registerAllTools(server: McpServer): void {\n' +
+    'export function registerAllTools(\n' +
+    '  server: McpServer,\n' +
+    '  settings: Settings,\n' +
+    '  terminalManager: TerminalManager\n' +
+    '): void {\n' +
     registryCalls.join('\n') + '\n' +
     '}\n'
 

@@ -2,7 +2,14 @@ import * as vscode from 'vscode'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import { exec } from 'child_process'
 import { log } from '../utils/logger.js'
+
+export interface TerminalResult {
+  stdout: string
+  stderr: string
+  exitCode: number | null
+}
 
 const MAX_READ_SIZE = 128 * 1024 // Read last 128 KB from log file
 
@@ -51,6 +58,23 @@ export class TerminalManager {
       this.cleanupLogFile(t.logFile)
     }
     this.terminals.clear()
+  }
+
+  /**
+   * Run a short-lived shell command and capture output
+   */
+  async runCommand(command: string, cwd?: string, timeoutMs: number = 30000): Promise<TerminalResult> {
+    const workingDir = cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd()
+
+    return new Promise((resolve, reject) => {
+      const proc = exec(command, { cwd: workingDir, timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
+        resolve({
+          stdout: stdout ?? '',
+          stderr: stderr ?? '',
+          exitCode: err?.code ?? 0,
+        })
+      })
+    })
   }
 
   spawn(name: string, command?: string, cwd?: string): { id: string; name: string } {

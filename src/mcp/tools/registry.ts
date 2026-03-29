@@ -1,9 +1,11 @@
 // AUTO-GENERATED - DO NOT EDIT
 // Source: src/commands/*/definition.yaml
 // Run: npm run generate:commands
-// Generated: 2026-03-29T01:20:49.743Z
+// Generated: 2026-03-29T01:31:03.124Z
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { Settings } from '../../config/Settings.js'
+import type { TerminalManager } from '../../services/TerminalManager.js'
 
 import { registerAddEditorDecoration } from '../../commands/add-editor-decoration/index.js'
 import { registerApplyCodeAction } from '../../commands/apply-code-action/index.js'
@@ -43,7 +45,11 @@ import { registerSpawnTerminal } from '../../commands/spawn-terminal/index.js'
 import { registerWriteFile } from '../../commands/write-file/index.js'
 import { registerWriteTerminal } from '../../commands/write-terminal/index.js'
 
-export function registerAllTools(server: McpServer): void {
+export function registerAllTools(
+  server: McpServer,
+  settings: Settings,
+  terminalManager: TerminalManager
+): void {
   registerAddEditorDecoration(server)
   registerApplyCodeAction(server)
   registerCloseFile(server)
