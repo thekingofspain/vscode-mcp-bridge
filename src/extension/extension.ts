@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
-import { VsCodeBridge } from './bridge/VsCodeBridge.js'
-import { ContextPusher } from './context/ContextPusher.js'
-import { HttpServer } from './server/HttpServer.js'
-import { TerminalManager } from './terminal/TerminalManager.js'
-import { Settings } from './config/Settings.js'
-import { log } from './utils/logger.js'
+import { ContextPusher } from '../services/ContextPusher.js'
+import { HttpServer } from '../mcp/server/HttpServer.js'
+import { TerminalManager } from '../services/TerminalManager.js'
+import { Settings } from '../config/Settings.js'
+import { log } from '../utils/logger.js'
+import { registerAllTools } from '../mcp/tools/registry.js'
 
 let httpServer: HttpServer | undefined
 let statusBarItem: vscode.StatusBarItem | undefined
@@ -18,18 +18,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   log.info('Extension', 'Activating MCP Bridge extension')
 
   const settings = new Settings()
-  const bridge = new VsCodeBridge()
 
-  // Register in-memory FS for diff previews
-  context.subscriptions.push(
-    vscode.workspace.registerFileSystemProvider('vscode-mcp-preview', bridge.memFs, {
-      isCaseSensitive: true,
-      isReadonly: true,
-    })
-  )
+  // Terminal manager for long-running processes
+  terminalManager = new TerminalManager()
+  log.info('Extension', 'Terminal manager initialized')
 
   // Context pusher (auto-push events to connected agents)
-  contextPusher = new ContextPusher(bridge)
+  contextPusher = new ContextPusher()
   if (settings.enableContextPush) {
     contextPusher.start()
   }
@@ -39,12 +34,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   statusBarItem.command = 'mcpServer.showStatus'
   context.subscriptions.push(statusBarItem)
 
-  // Terminal manager for long-running processes
-  terminalManager = new TerminalManager()
-  log.info('Extension', 'Terminal manager initialized')
-
   // Start HTTP server
-  httpServer = new HttpServer(bridge, contextPusher, settings, terminalManager)
+  httpServer = new HttpServer(contextPusher, settings, terminalManager)
 
   async function startServer(): Promise<void> {
     try {

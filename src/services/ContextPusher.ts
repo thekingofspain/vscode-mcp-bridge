@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
-import { VsCodeBridge } from '../bridge/VsCodeBridge.js'
+import { getActiveFileSnapshot } from '../vscode-api/workspace/documents.js'
+import { getSelectionSnapshot } from '../vscode-api/window/editors.js'
+import type { DiagnosticItem } from '../vscode-api/workspace/diagnostics.js'
 
 type PushCallback = (type: string, payload: unknown) => void
 
@@ -15,7 +17,7 @@ export class ContextPusher {
   private disposables: vscode.Disposable[] = []
   private callbacks = new Set<PushCallback>()
 
-  constructor(private bridge: VsCodeBridge) {}
+  constructor() { }
 
   start(): void {
     this.disposables.push(
@@ -51,17 +53,18 @@ export class ContextPusher {
   }
 
   private pushActiveFile(): void {
-    const snap = this.bridge.getActiveFileSnapshot()
+    const snap = getActiveFileSnapshot()
     if (snap) this.emit('activeFile', snap)
   }
 
   private pushSelection(): void {
-    const snap = this.bridge.getSelectionSnapshot()
+    const snap = getSelectionSnapshot()
     if (snap) this.emit('selection', snap)
   }
 
   private async pushDiagnostics(): Promise<void> {
-    const filtered = await this.bridge.getDiagnostics({ scope: 'open_files' })
+    const { getDiagnostics } = await import('../vscode-api/workspace/diagnostics.js')
+    const filtered = await getDiagnostics({ scope: 'open_files' })
     this.emit('diagnostics', filtered)
   }
 }

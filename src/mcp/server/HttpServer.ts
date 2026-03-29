@@ -2,12 +2,11 @@ import * as http from 'http'
 import { randomUUID } from 'crypto'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { VsCodeBridge } from '../bridge/VsCodeBridge.js'
-import { ContextPusher } from '../context/ContextPusher.js'
-import { TerminalManager } from '../terminal/TerminalManager.js'
-import { registerTools } from '../tools/index.js'
-import type { Settings } from '../config/Settings.js'
-import { log } from '../utils/logger.js'
+import { ContextPusher } from '../../services/ContextPusher.js'
+import { TerminalManager } from '../../services/TerminalManager.js'
+import { registerAllTools } from '../tools/registry.js'
+import type { Settings } from '../../config/Settings.js'
+import { log } from '../../utils/logger.js'
 
 interface SessionEntry {
   transport: StreamableHTTPServerTransport
@@ -20,7 +19,6 @@ export class HttpServer {
   private actualPort = 0
 
   constructor(
-    private bridge: VsCodeBridge,
     private pusher: ContextPusher,
     private settings: Settings,
     private terminalManager: TerminalManager,
@@ -156,25 +154,25 @@ GENERAL:
 - VS Code's native tools (LSP, git, symbols) are often faster and more semantically aware than raw file search.`,
       },
     )
-    registerTools(mcpServer, this.bridge, this.settings, this.terminalManager)
+    registerAllTools(mcpServer, this.settings, this.terminalManager)
 
     // Wire context push events, but gate on initialization
     let initialized = false
     const unsubscribePush = this.settings.enableContextPush
       ? this.pusher.onPush((type, payload) => {
-          if (!initialized) return
-          try {
-            transport.send({
-              jsonrpc: '2.0',
-              method: 'notifications/message',
-              params: {
-                level: 'info',
-                logger: 'vscode-mcp',
-                data: { type, payload },
-              },
-            }).catch(() => undefined)
-          } catch { /* connection may have closed */ }
-        })
+        if (!initialized) return
+        try {
+          transport.send({
+            jsonrpc: '2.0',
+            method: 'notifications/message',
+            params: {
+              level: 'info',
+              logger: 'vscode-mcp',
+              data: { type, payload },
+            },
+          }).catch(() => undefined)
+        } catch { /* connection may have closed */ }
+      })
       : () => undefined
 
     this.sessions.set(sessionId, { transport, unsubscribePush })

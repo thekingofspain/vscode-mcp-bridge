@@ -110,7 +110,8 @@ async function generateCommands(): Promise<void> {
     const pascalName = pascalCase(def.tool)
     const index = '// Auto-generated from definition.yaml\n' +
       'export { execute } from \'./handler.js\'\n' +
-      'export { ' + pascalName + 'InputSchema } from \'./schema.js\'\n'
+      'export { ' + pascalName + 'InputSchema } from \'./schema.js\'\n' +
+      'export { register' + pascalName + ' } from \'./handler.js\'\n'
     fs.writeFileSync(path.join(commandsDir, folder, 'index.ts'), index)
 
     // Add to registry

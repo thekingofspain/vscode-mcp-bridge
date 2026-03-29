@@ -4,7 +4,7 @@ const isWatch = process.argv.includes('--watch')
 const isProd = process.argv.includes('--production')
 
 const buildOptions = {
-  entryPoints: ['src/extension.ts'],
+  entryPoints: ['src/extension/extension.ts'],
   bundle: true,
   outfile: 'out/extension.js',
   external: ['vscode'], // Must be external - provided by VS Code runtime
