@@ -1,54 +1,72 @@
 import * as vscode from 'vscode';
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+/**
+ * Logger configuration - single source of truth for log levels and priorities
+ * Pattern: Winston/pino style - object with `as const` for type inference
+ */
+const LOG_LEVELS = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+} as const;
 
-const LOG_LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3 };
+type LogLevel = keyof typeof LOG_LEVELS;
 
-class Logger {
-  private channel: vscode.OutputChannel | null = null;
-  private level: LogLevel = 'info';
+interface Logger {
+  init(channel: vscode.OutputChannel, level?: LogLevel): void;
+  setLevel(level: LogLevel): void;
+  debug(component: string, message: string, data?: unknown): void;
+  info(component: string, message: string, data?: unknown): void;
+  warn(component: string, message: string, data?: unknown): void;
+  error(component: string, message: string, data?: unknown): void;
+}
 
-  init(channel: vscode.OutputChannel, level?: LogLevel): void {
-    this.channel = channel;
+export const log: Logger = (() => {
+  let channel: vscode.OutputChannel | null = null;
+  let level: LogLevel = 'info';
 
-    if (level) this.level = level;
-  }
-
-  setLevel(level: LogLevel): void {
-    this.level = level;
-  }
-
-  debug(component: string, message: string, data?: unknown): void {
-    this.log('debug', component, message, data);
-  }
-
-  info(component: string, message: string, data?: unknown): void {
-    this.log('info', component, message, data);
-  }
-
-  warn(component: string, message: string, data?: unknown): void {
-    this.log('warn', component, message, data);
-  }
-
-  error(component: string, message: string, data?: unknown): void {
-    this.log('error', component, message, data);
-  }
-
-  private log(level: LogLevel, component: string, message: string, data?: unknown): void {
-    if (LOG_LEVELS[level] < LOG_LEVELS[this.level]) return;
+  function logMessage(logLevel: LogLevel, component: string, message: string, data?: unknown): void {
+    if (LOG_LEVELS[logLevel] < LOG_LEVELS[level]) return;
 
     const timestamp = new Date().toISOString().slice(11, 23);
-    const prefix = `[${timestamp}] [${level.toUpperCase()}] [${component}]`;
+    const prefix = `[${timestamp}] [${logLevel.toUpperCase()}] [${component}]`;
     const line = data !== undefined
       ? `${prefix} ${message} ${JSON.stringify(data)}`
       : `${prefix} ${message}`;
 
-    this.channel?.appendLine(line);
+    channel?.appendLine(line);
 
-    if (level === 'error') {
+    if (logLevel === 'error') {
       console.error(`[MCP Bridge] ${line}`);
     }
   }
-}
 
-export const log = new Logger();
+  return {
+    init(outputChannel: vscode.OutputChannel, logLevel?: LogLevel): void {
+      channel = outputChannel;
+
+      if (logLevel) level = logLevel;
+    },
+
+    setLevel(logLevel: LogLevel): void {
+      level = logLevel;
+    },
+
+    debug(component: string, message: string, data?: unknown): void {
+      logMessage('debug', component, message, data);
+    },
+
+    info(component: string, message: string, data?: unknown): void {
+      logMessage('info', component, message, data);
+    },
+
+    warn(component: string, message: string, data?: unknown): void {
+      logMessage('warn', component, message, data);
+    },
+
+    error(component: string, message: string, data?: unknown): void {
+      logMessage('error', component, message, data);
+    },
+  };
+})();

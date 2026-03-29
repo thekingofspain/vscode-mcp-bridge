@@ -1,5 +1,6 @@
-import * as vscode from 'vscode';
+import { DIAGNOSTIC_SCOPE, DIAGNOSTIC_SEVERITY } from '@type-defs/common.js';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import type { DiagnosticItem, GetDiagnosticsOptions } from './types.js';
 
 // Git command timeout in milliseconds
@@ -18,7 +19,7 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
   let urisToFilter: Set<string> | null = null;
   const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
-  if (opts.scope === 'git_delta' && root) {
+  if (opts.scope === DIAGNOSTIC_SCOPE.git_delta && root) {
     try {
       const { exec } = await import('child_process');
       const result = await new Promise<string>((resolve, reject) => {
@@ -36,16 +37,16 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
       // Log timeout or other errors for debugging
       console.warn('Git delta diagnostics failed:', err);
     }
-  } else if (opts.scope === 'open_files') {
+  } else if (opts.scope === DIAGNOSTIC_SCOPE.open_files) {
     urisToFilter = new Set(
       vscode.window.visibleTextEditors.map(e => e.document.uri.fsPath)
     );
-  } else if (opts.scope === 'file' && opts.targetPath) {
+  } else if (opts.scope === DIAGNOSTIC_SCOPE.file && opts.targetPath) {
     urisToFilter = new Set([opts.targetPath]);
   }
 
   const allDiags = vscode.languages.getDiagnostics();
-  const levels = ['hint', 'information', 'warning', 'error'];
+  const levels = Object.keys(DIAGNOSTIC_SEVERITY);
   const minLevel = opts.severity ? levels.indexOf(opts.severity) : -1;
   const results: DiagnosticItem[] = [];
   // Filter URIs first to avoid unnecessary iteration
@@ -58,7 +59,7 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
     const fsPath = uri.fsPath;
 
-    if (opts.scope === 'folder' && opts.targetPath) {
+    if (opts.scope === DIAGNOSTIC_SCOPE.folder && opts.targetPath) {
       const rel = path.relative(opts.targetPath, fsPath);
 
       if (rel.startsWith('..')) continue;
