@@ -66,7 +66,7 @@ export class ContextPusher {
   }
 
   private async pushDiagnostics(): Promise<void> {
-    const { getDiagnostics } = await import('../vscode-api/workspace/diagnostics.js');
+    const { getDiagnostics } = await import('@vscode-api/workspace/diagnostics.js');
     const filtered = await getDiagnostics({ scope: 'open_files' });
 
     this.emit('diagnostics', filtered);
