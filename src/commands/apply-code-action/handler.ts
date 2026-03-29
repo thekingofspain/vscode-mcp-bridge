@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getCodeActions, applyCodeAction } from '../../vscode-api/languages/codeactions.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; startLine: number; startChar: number; endLine: number; endChar: number; actionIndex: number }
@@ -26,5 +28,5 @@ export function registerApplyCodeAction(server: McpServer): void {
   server.registerTool('apply_code_action', {
     description: 'Apply a code action by index (get index from get_code_actions first)',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

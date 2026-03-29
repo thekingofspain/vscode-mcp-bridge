@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { TerminalManager } from '../../services/TerminalManager.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   terminalManager: TerminalManager,
@@ -13,5 +15,5 @@ export function registerRunTerminalCommand(server: McpServer, terminalManager: T
   server.registerTool('run_terminal_command', {
     description: 'Run a shell command and capture its output',
     inputSchema: {}
-  }, (args) => execute(terminalManager, args))
+  }, (args: Record<string, unknown>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => execute(terminalManager, args as { command: string; cwd?: string; timeoutMs?: number }))
 }

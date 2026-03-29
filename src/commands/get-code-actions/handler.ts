@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getCodeActions } from '../../vscode-api/languages/codeactions.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; startLine: number; startChar: number; endLine: number; endChar: number }
@@ -22,5 +24,5 @@ export function registerGetCodeActions(server: McpServer): void {
   server.registerTool('get_code_actions', {
     description: 'Get available code actions (quick fixes, refactors) for a range in a file',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

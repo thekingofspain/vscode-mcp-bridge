@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getRepoMap } from '../../vscode-api/workspace/symbols.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { directory?: string }
@@ -12,5 +14,5 @@ export function registerGetRepoMap(server: McpServer): void {
   server.registerTool('get_repo_map', {
     description: 'Generate an AST-based global symbol map of the repository to provide context to agents',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

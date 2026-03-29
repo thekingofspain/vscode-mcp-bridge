@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getCompletions } from '../../vscode-api/languages/completions.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; line: number; character: number; triggerCharacter?: string }
@@ -18,5 +20,5 @@ export function registerGetCompletions(server: McpServer): void {
   server.registerTool('get_completions', {
     description: 'Get IntelliSense completion suggestions at a specific position using LSP',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

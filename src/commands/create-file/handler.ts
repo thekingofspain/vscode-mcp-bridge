@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { createFile } from '../../vscode-api/workspace/filesystem.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; content?: string }
@@ -12,5 +14,5 @@ export function registerCreateFile(server: McpServer): void {
   server.registerTool('create_file', {
     description: 'Create a new file',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

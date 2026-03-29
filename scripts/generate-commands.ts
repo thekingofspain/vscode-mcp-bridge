@@ -49,6 +49,10 @@ function generateZodSchema(def: ToolDefinition): string {
         schema = '  ' + name + ': z.enum([' + field.values.map(v => "'" + v + "'").join(', ') + '])'
       }
 
+      if (field.type === 'array') {
+        schema = '  ' + name + ': z.array(z.unknown())'
+      }
+
       if (field.constraints?.min !== undefined) {
         schema += '.min(' + field.constraints.min + ')'
       }
@@ -116,8 +120,8 @@ async function generateCommands(): Promise<void> {
     fs.writeFileSync(path.join(commandsDir, folder, 'index.ts'), index)
 
     // Add to registry
-    registryImports.push('import { register' + pascalName + ' } from \'../../commands/' + folder + '/index.js\'')
-    registryCalls.push('  register' + pascalName + '(server)')
+    registryImports.push('import { execute as ' + pascalName + 'Execute, ' + pascalName + 'InputSchema } from \'../../commands/' + folder + '/index.js\'')
+    registryCalls.push('    server.registerTool(\'' + def.tool + '\', {\n      description: \'' + def.description.replace(/'/g, "\\'") + '\',\n      inputSchema: ' + pascalName + 'InputSchema\n    }, ' + pascalName + 'Execute as never)\n  ')
 
     console.log('Generated ' + folder)
   }
@@ -136,7 +140,7 @@ async function generateCommands(): Promise<void> {
     '  settings: Settings,\n' +
     '  terminalManager: TerminalManager\n' +
     '): void {\n' +
-    registryCalls.join('\n') + '\n' +
+    registryCalls.join('') +
     '}\n'
 
   fs.writeFileSync(registryPath, registryContent)

@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getSignatureHelp } from '../../vscode-api/languages/signature.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; line: number; character: number; triggerCharacter?: string }
@@ -28,5 +30,5 @@ export function registerGetSignatureHelp(server: McpServer): void {
   server.registerTool('get_signature_help', {
     description: 'Get parameter hints and signature information for a function call using LSP',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

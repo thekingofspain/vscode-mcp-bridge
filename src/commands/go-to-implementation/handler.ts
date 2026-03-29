@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getImplementation } from '../../vscode-api/languages/definitions.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; line: number; character: number }
@@ -30,5 +32,5 @@ export function registerGoToImplementation(server: McpServer): void {
   server.registerTool('go_to_implementation', {
     description: 'Get the implementation location(s) of a symbol at a given position using LSP',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

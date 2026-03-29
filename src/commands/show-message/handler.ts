@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { showMessage } from '../../vscode-api/window/ui.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { message: string; level?: 'info' | 'warning' | 'error'; items?: string[] }
@@ -12,5 +14,5 @@ export function registerShowMessage(server: McpServer): void {
   server.registerTool('show_message', {
     description: 'Display a notification message to the user in the VS Code UI',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

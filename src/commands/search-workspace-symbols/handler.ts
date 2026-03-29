@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getWorkspaceSymbols } from '../../vscode-api/workspace/symbols.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 function symbolKindName(kind: number): string {
   const kinds = ['File', 'Module', 'Namespace', 'Package', 'Class', 'Method', 'Property', 'Field', 'Constructor',
@@ -26,5 +28,5 @@ export function registerSearchWorkspaceSymbols(server: McpServer): void {
   server.registerTool('search_workspace_symbols', {
     description: 'Search for symbols across the entire workspace',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { showDiff } from '../../vscode-api/window/editors.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; newContent: string; title?: string }
@@ -12,5 +14,5 @@ export function registerShowDiff(server: McpServer): void {
   server.registerTool('show_diff', {
     description: 'Show a visual diff in VS Code before applying file changes. Does NOT write the file.',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { openFile } from '../../vscode-api/workspace/documents.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; line?: number; character?: number; preview?: boolean }
@@ -12,5 +14,5 @@ export function registerOpenFile(server: McpServer): void {
   server.registerTool('open_file', {
     description: 'Open a file in the VS Code editor',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

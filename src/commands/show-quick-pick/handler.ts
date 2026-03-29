@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { showQuickPick } from '../../vscode-api/window/ui.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { items: string[]; placeHolder?: string; canPickMany?: boolean }
@@ -12,5 +14,5 @@ export function registerShowQuickPick(server: McpServer): void {
   server.registerTool('show_quick_pick', {
     description: 'Show a dropdown menu for the user to select from multiple options',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

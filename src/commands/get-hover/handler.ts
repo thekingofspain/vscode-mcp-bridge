@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getHover } from '../../vscode-api/languages/hover.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string; line: number; character: number }
@@ -19,5 +21,5 @@ export function registerGetHover(server: McpServer): void {
   server.registerTool('get_hover', {
     description: 'Get hover information (type info, documentation) for a symbol at a given position',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

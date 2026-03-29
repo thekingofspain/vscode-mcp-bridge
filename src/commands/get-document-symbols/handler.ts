@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getDocumentSymbols } from '../../vscode-api/workspace/symbols.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 function symbolKindName(kind: number): string {
   const kinds = ['File', 'Module', 'Namespace', 'Package', 'Class', 'Method', 'Property', 'Field', 'Constructor',
@@ -31,5 +33,5 @@ export function registerGetDocumentSymbols(server: McpServer): void {
   server.registerTool('get_document_symbols', {
     description: 'Get all symbols (functions, classes, variables, etc.) in a file',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }

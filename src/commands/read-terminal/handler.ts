@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { TerminalManager } from '../../services/TerminalManager.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   terminalManager: TerminalManager,
@@ -14,5 +16,5 @@ export function registerReadTerminal(server: McpServer, terminalManager: Termina
   server.registerTool('read_terminal', {
     description: 'Read recent output from a managed terminal. Returns the tail of the output buffer.',
     inputSchema: {}
-  }, (args) => execute(terminalManager, args))
+  }, (args: Record<string, unknown>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => execute(terminalManager, args as { id: string; lines?: number }))
 }

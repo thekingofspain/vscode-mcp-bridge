@@ -1,5 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { closeFile } from '../../vscode-api/workspace/documents.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
+import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
 
 export async function execute(
   args: { filePath: string }
@@ -12,5 +14,5 @@ export function registerCloseFile(server: McpServer): void {
   server.registerTool('close_file', {
     description: 'Close a file tab in VS Code',
     inputSchema: {}
-  }, execute)
+  }, execute as never)
 }
