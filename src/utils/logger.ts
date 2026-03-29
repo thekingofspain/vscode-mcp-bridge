@@ -27,20 +27,18 @@ export const log: Logger = (() => {
   let level: LogLevel = 'info';
 
   function logMessage(logLevel: LogLevel, component: string, message: string, data?: unknown): void {
-    const shouldLog = LOG_LEVELS[logLevel] >= LOG_LEVELS[level];
+    if (LOG_LEVELS[logLevel] >= LOG_LEVELS[level]) {
+      const timestamp = new Date().toISOString().slice(11, 23);
+      const prefix = `[${timestamp}] [${logLevel.toUpperCase()}] [${component}]`;
+      const line = data !== undefined
+        ? `${prefix} ${message} ${JSON.stringify(data)}`
+        : `${prefix} ${message}`;
 
-    if (!shouldLog) return;
+      channel?.appendLine(line);
 
-    const timestamp = new Date().toISOString().slice(11, 23);
-    const prefix = `[${timestamp}] [${logLevel.toUpperCase()}] [${component}]`;
-    const line = data !== undefined
-      ? `${prefix} ${message} ${JSON.stringify(data)}`
-      : `${prefix} ${message}`;
-
-    channel?.appendLine(line);
-
-    if (logLevel === 'error') {
-      console.error(`[MCP Bridge] ${line}`);
+      if (logLevel === 'error') {
+        console.error(`[MCP Bridge] ${line}`);
+      }
     }
   }
 

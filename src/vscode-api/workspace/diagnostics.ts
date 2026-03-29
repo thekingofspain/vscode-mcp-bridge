@@ -67,8 +67,9 @@ export async function getDiagnostics(opts: GetDiagnosticsOptions): Promise<Diagn
 
     for (const d of diags) {
       const mappedSeverity = severityMap[d.severity];
+      const severityLevel = levels.indexOf(mappedSeverity);
 
-      if (minLevel >= 0 && levels.indexOf(mappedSeverity) < minLevel) continue;
+      if (minLevel >= 0 && severityLevel < minLevel) continue;
 
       const codeValue = typeof d.code === 'object' ? (d.code as { value: string | number }).value : d.code;
 

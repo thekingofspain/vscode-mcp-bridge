@@ -241,9 +241,12 @@ export class TerminalManager {
     const maxAttempts = 50; // 50 * 100ms = 5s max wait
 
     setTimeout(() => {
-      if (this.getLogSize(logFile) > 0) {
+      const hasContent = this.getLogSize(logFile) > 0;
+      const canRetry = attempt < maxAttempts;
+
+      if (hasContent) {
         callback();
-      } else if (attempt < maxAttempts) {
+      } else if (canRetry) {
         this.waitForReady(logFile, callback, attempt + 1);
       } else {
         log.warn(TerminalManager.name, `Shell did not become ready after 5s, sending command anyway`);
