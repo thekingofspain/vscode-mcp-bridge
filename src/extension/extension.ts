@@ -4,7 +4,6 @@ import { HttpServer } from '../mcp/server/HttpServer.js'
 import { TerminalManager } from '../services/TerminalManager.js'
 import { Settings } from '../config/Settings.js'
 import { log } from '../utils/logger.js'
-import { registerAllTools } from '../mcp/tools/registry.js'
 
 let httpServer: HttpServer | undefined
 let statusBarItem: vscode.StatusBarItem | undefined

@@ -50,152 +50,152 @@ export function registerAllTools(
   settings: Settings,
   terminalManager: TerminalManager
 ): void {
-    server.registerTool('add_editor_decoration', {
-      description: 'Highlight specific lines or ranges in the active editor to provide visual feedback',
-      inputSchema: AddEditorDecorationInputSchema
-    }, AddEditorDecorationExecute as never)
-      server.registerTool('apply_code_action', {
-      description: 'Apply a code action by index (get index from get_code_actions first)',
-      inputSchema: ApplyCodeActionInputSchema
-    }, ApplyCodeActionExecute as never)
-      server.registerTool('close_file', {
-      description: 'Close a file tab in VS Code',
-      inputSchema: CloseFileInputSchema
-    }, CloseFileExecute as never)
-      server.registerTool('create_file', {
-      description: 'Create a new file',
-      inputSchema: CreateFileInputSchema
-    }, CreateFileExecute as never)
-      server.registerTool('delete_file', {
-      description: 'Delete a file',
-      inputSchema: DeleteFileInputSchema
-    }, DeleteFileExecute as never)
-      server.registerTool('execute_vscode_command', {
-      description: 'Execute any VS Code command. Requires the command to be in the allowedCommands setting.',
-      inputSchema: ExecuteVscodeCommandInputSchema
-    }, ExecuteVscodeCommandExecute as never)
-      server.registerTool('find_references', {
-      description: 'Find all references to a symbol at a given position using LSP',
-      inputSchema: FindReferencesInputSchema
-    }, FindReferencesExecute as never)
-      server.registerTool('get_active_file', {
-      description: 'Get the currently active/open file in VS Code',
-      inputSchema: GetActiveFileInputSchema
-    }, GetActiveFileExecute as never)
-      server.registerTool('get_code_actions', {
-      description: 'Get available code actions (quick fixes, refactors) for a range in a file',
-      inputSchema: GetCodeActionsInputSchema
-    }, GetCodeActionsExecute as never)
-      server.registerTool('get_completions', {
-      description: 'Get IntelliSense completion suggestions at a specific position using LSP',
-      inputSchema: GetCompletionsInputSchema
-    }, GetCompletionsExecute as never)
-      server.registerTool('get_diagnostics', {
-      description: 'Get LSP diagnostics with expanded filtering options (Git delta, recursive folders)',
-      inputSchema: GetDiagnosticsInputSchema
-    }, GetDiagnosticsExecute as never)
-      server.registerTool('get_document_symbols', {
-      description: 'Get all symbols (functions, classes, variables, etc.) in a file',
-      inputSchema: GetDocumentSymbolsInputSchema
-    }, GetDocumentSymbolsExecute as never)
-      server.registerTool('get_hover', {
-      description: 'Get hover information (type info, documentation) for a symbol at a given position',
-      inputSchema: GetHoverInputSchema
-    }, GetHoverExecute as never)
-      server.registerTool('get_open_tabs', {
-      description: 'Get all currently open file tabs in VS Code',
-      inputSchema: GetOpenTabsInputSchema
-    }, GetOpenTabsExecute as never)
-      server.registerTool('get_repo_map', {
-      description: 'Generate an AST-based global symbol map of the repository to provide context to agents',
-      inputSchema: GetRepoMapInputSchema
-    }, GetRepoMapExecute as never)
-      server.registerTool('get_selection', {
-      description: 'Get the current text selection and cursor position',
-      inputSchema: GetSelectionInputSchema
-    }, GetSelectionExecute as never)
-      server.registerTool('get_signature_help', {
-      description: 'Get parameter hints and signature information for a function call using LSP',
-      inputSchema: GetSignatureHelpInputSchema
-    }, GetSignatureHelpExecute as never)
-      server.registerTool('get_workspace_info', {
-      description: 'Get information about the current VS Code workspace',
-      inputSchema: GetWorkspaceInfoInputSchema
-    }, GetWorkspaceInfoExecute as never)
-      server.registerTool('git_action', {
-      description: 'Execute common Git operations directly',
-      inputSchema: GitActionInputSchema
-    }, GitActionExecute as never)
-      server.registerTool('go_to_definition', {
-      description: 'Get the definition location(s) of a symbol at a given position using LSP',
-      inputSchema: GoToDefinitionInputSchema
-    }, GoToDefinitionExecute as never)
-      server.registerTool('go_to_implementation', {
-      description: 'Get the implementation location(s) of a symbol at a given position using LSP',
-      inputSchema: GoToImplementationInputSchema
-    }, GoToImplementationExecute as never)
-      server.registerTool('go_to_type_definition', {
-      description: 'Get the type definition location(s) of a symbol at a given position using LSP',
-      inputSchema: GoToTypeDefinitionInputSchema
-    }, GoToTypeDefinitionExecute as never)
-      server.registerTool('kill_terminal', {
-      description: 'Kill a managed terminal and its process',
-      inputSchema: KillTerminalInputSchema
-    }, KillTerminalExecute as never)
-      server.registerTool('list_terminals', {
-      description: 'List all managed terminals and their status (alive/dead, log size)',
-      inputSchema: ListTerminalsInputSchema
-    }, ListTerminalsExecute as never)
-      server.registerTool('open_file', {
-      description: 'Open a file in the VS Code editor',
-      inputSchema: OpenFileInputSchema
-    }, OpenFileExecute as never)
-      server.registerTool('read_file', {
-      description: 'Read the contents of a file from the file system',
-      inputSchema: ReadFileInputSchema
-    }, ReadFileExecute as never)
-      server.registerTool('read_terminal', {
-      description: 'Read recent output from a managed terminal. Returns the tail of the output buffer.',
-      inputSchema: ReadTerminalInputSchema
-    }, ReadTerminalExecute as never)
-      server.registerTool('rename_symbol', {
-      description: 'Rename a symbol and all its references across the workspace',
-      inputSchema: RenameSymbolInputSchema
-    }, RenameSymbolExecute as never)
-      server.registerTool('request_input', {
-      description: 'Prompt the user for direct free-text input',
-      inputSchema: RequestInputInputSchema
-    }, RequestInputExecute as never)
-      server.registerTool('run_terminal_command', {
-      description: 'Run a shell command and capture its output',
-      inputSchema: RunTerminalCommandInputSchema
-    }, RunTerminalCommandExecute as never)
-      server.registerTool('search_workspace_symbols', {
-      description: 'Search for symbols across the entire workspace',
-      inputSchema: SearchWorkspaceSymbolsInputSchema
-    }, SearchWorkspaceSymbolsExecute as never)
-      server.registerTool('show_diff', {
-      description: 'Show a visual diff in VS Code before applying file changes. Does NOT write the file.',
-      inputSchema: ShowDiffInputSchema
-    }, ShowDiffExecute as never)
-      server.registerTool('show_message', {
-      description: 'Display a notification message to the user in the VS Code UI',
-      inputSchema: ShowMessageInputSchema
-    }, ShowMessageExecute as never)
-      server.registerTool('show_quick_pick', {
-      description: 'Show a dropdown menu for the user to select from multiple options',
-      inputSchema: ShowQuickPickInputSchema
-    }, ShowQuickPickExecute as never)
-      server.registerTool('spawn_terminal', {
-      description: 'Spawn a long-running process (dev server, watch mode, etc.) in a VS Code terminal with output capture. Use run_terminal_command for short-lived commands instead.',
-      inputSchema: SpawnTerminalInputSchema
-    }, SpawnTerminalExecute as never)
-      server.registerTool('write_file', {
-      description: 'Write content to a file. Integrates with VS Code undo history.',
-      inputSchema: WriteFileInputSchema
-    }, WriteFileExecute as never)
-      server.registerTool('write_terminal', {
-      description: 'Send input/text to a managed terminal (e.g. answer a prompt, send a command)',
-      inputSchema: WriteTerminalInputSchema
-    }, WriteTerminalExecute as never)
-  }
+  server.registerTool('add_editor_decoration', {
+    description: 'Highlight specific lines or ranges in the active editor to provide visual feedback',
+    inputSchema: AddEditorDecorationInputSchema
+  }, AddEditorDecorationExecute as never)
+  server.registerTool('apply_code_action', {
+    description: 'Apply a code action by index (get index from get_code_actions first)',
+    inputSchema: ApplyCodeActionInputSchema
+  }, ApplyCodeActionExecute as never)
+  server.registerTool('close_file', {
+    description: 'Close a file tab in VS Code',
+    inputSchema: CloseFileInputSchema
+  }, CloseFileExecute as never)
+  server.registerTool('create_file', {
+    description: 'Create a new file',
+    inputSchema: CreateFileInputSchema
+  }, CreateFileExecute as never)
+  server.registerTool('delete_file', {
+    description: 'Delete a file',
+    inputSchema: DeleteFileInputSchema
+  }, DeleteFileExecute as never)
+  server.registerTool('execute_vscode_command', {
+    description: 'Execute any VS Code command. Requires the command to be in the allowedCommands setting.',
+    inputSchema: ExecuteVscodeCommandInputSchema
+  }, (args, _extra) => ExecuteVscodeCommandExecute(settings, args as { command: string; args?: unknown[] }))
+  server.registerTool('find_references', {
+    description: 'Find all references to a symbol at a given position using LSP',
+    inputSchema: FindReferencesInputSchema
+  }, FindReferencesExecute as never)
+  server.registerTool('get_active_file', {
+    description: 'Get the currently active/open file in VS Code',
+    inputSchema: GetActiveFileInputSchema
+  }, GetActiveFileExecute as never)
+  server.registerTool('get_code_actions', {
+    description: 'Get available code actions (quick fixes, refactors) for a range in a file',
+    inputSchema: GetCodeActionsInputSchema
+  }, GetCodeActionsExecute as never)
+  server.registerTool('get_completions', {
+    description: 'Get IntelliSense completion suggestions at a specific position using LSP',
+    inputSchema: GetCompletionsInputSchema
+  }, GetCompletionsExecute as never)
+  server.registerTool('get_diagnostics', {
+    description: 'Get LSP diagnostics with expanded filtering options (Git delta, recursive folders)',
+    inputSchema: GetDiagnosticsInputSchema
+  }, GetDiagnosticsExecute as never)
+  server.registerTool('get_document_symbols', {
+    description: 'Get all symbols (functions, classes, variables, etc.) in a file',
+    inputSchema: GetDocumentSymbolsInputSchema
+  }, GetDocumentSymbolsExecute as never)
+  server.registerTool('get_hover', {
+    description: 'Get hover information (type info, documentation) for a symbol at a given position',
+    inputSchema: GetHoverInputSchema
+  }, GetHoverExecute as never)
+  server.registerTool('get_open_tabs', {
+    description: 'Get all currently open file tabs in VS Code',
+    inputSchema: GetOpenTabsInputSchema
+  }, GetOpenTabsExecute as never)
+  server.registerTool('get_repo_map', {
+    description: 'Generate an AST-based global symbol map of the repository to provide context to agents',
+    inputSchema: GetRepoMapInputSchema
+  }, GetRepoMapExecute as never)
+  server.registerTool('get_selection', {
+    description: 'Get the current text selection and cursor position',
+    inputSchema: GetSelectionInputSchema
+  }, GetSelectionExecute as never)
+  server.registerTool('get_signature_help', {
+    description: 'Get parameter hints and signature information for a function call using LSP',
+    inputSchema: GetSignatureHelpInputSchema
+  }, GetSignatureHelpExecute as never)
+  server.registerTool('get_workspace_info', {
+    description: 'Get information about the current VS Code workspace',
+    inputSchema: GetWorkspaceInfoInputSchema
+  }, GetWorkspaceInfoExecute as never)
+  server.registerTool('git_action', {
+    description: 'Execute common Git operations directly',
+    inputSchema: GitActionInputSchema
+  }, GitActionExecute as never)
+  server.registerTool('go_to_definition', {
+    description: 'Get the definition location(s) of a symbol at a given position using LSP',
+    inputSchema: GoToDefinitionInputSchema
+  }, GoToDefinitionExecute as never)
+  server.registerTool('go_to_implementation', {
+    description: 'Get the implementation location(s) of a symbol at a given position using LSP',
+    inputSchema: GoToImplementationInputSchema
+  }, GoToImplementationExecute as never)
+  server.registerTool('go_to_type_definition', {
+    description: 'Get the type definition location(s) of a symbol at a given position using LSP',
+    inputSchema: GoToTypeDefinitionInputSchema
+  }, GoToTypeDefinitionExecute as never)
+  server.registerTool('kill_terminal', {
+    description: 'Kill a managed terminal and its process',
+    inputSchema: KillTerminalInputSchema
+  }, (args, _extra) => KillTerminalExecute(terminalManager, args as { id: string }))
+  server.registerTool('list_terminals', {
+    description: 'List all managed terminals and their status (alive/dead, log size)',
+    inputSchema: ListTerminalsInputSchema
+  }, () => ListTerminalsExecute(terminalManager))
+  server.registerTool('open_file', {
+    description: 'Open a file in the VS Code editor',
+    inputSchema: OpenFileInputSchema
+  }, OpenFileExecute as never)
+  server.registerTool('read_file', {
+    description: 'Read the contents of a file from the file system',
+    inputSchema: ReadFileInputSchema
+  }, ReadFileExecute as never)
+  server.registerTool('read_terminal', {
+    description: 'Read recent output from a managed terminal. Returns the tail of the output buffer.',
+    inputSchema: ReadTerminalInputSchema
+  }, (args, _extra) => ReadTerminalExecute(terminalManager, args as { id: string; lines?: number }))
+  server.registerTool('rename_symbol', {
+    description: 'Rename a symbol and all its references across the workspace',
+    inputSchema: RenameSymbolInputSchema
+  }, RenameSymbolExecute as never)
+  server.registerTool('request_input', {
+    description: 'Prompt the user for direct free-text input',
+    inputSchema: RequestInputInputSchema
+  }, RequestInputExecute as never)
+  server.registerTool('run_terminal_command', {
+    description: 'Run a shell command and capture its output',
+    inputSchema: RunTerminalCommandInputSchema
+  }, (args, _extra) => RunTerminalCommandExecute(terminalManager, args as { command: string; cwd?: string; timeoutMs?: number }))
+  server.registerTool('search_workspace_symbols', {
+    description: 'Search for symbols across the entire workspace',
+    inputSchema: SearchWorkspaceSymbolsInputSchema
+  }, SearchWorkspaceSymbolsExecute as never)
+  server.registerTool('show_diff', {
+    description: 'Show a visual diff in VS Code before applying file changes. Does NOT write the file.',
+    inputSchema: ShowDiffInputSchema
+  }, ShowDiffExecute as never)
+  server.registerTool('show_message', {
+    description: 'Display a notification message to the user in the VS Code UI',
+    inputSchema: ShowMessageInputSchema
+  }, ShowMessageExecute as never)
+  server.registerTool('show_quick_pick', {
+    description: 'Show a dropdown menu for the user to select from multiple options',
+    inputSchema: ShowQuickPickInputSchema
+  }, ShowQuickPickExecute as never)
+  server.registerTool('spawn_terminal', {
+    description: 'Spawn a long-running process (dev server, watch mode, etc.) in a VS Code terminal with output capture. Use run_terminal_command for short-lived commands instead.',
+    inputSchema: SpawnTerminalInputSchema
+  }, (args, _extra) => SpawnTerminalExecute(terminalManager, args as { name: string; command?: string; cwd?: string }))
+  server.registerTool('write_file', {
+    description: 'Write content to a file. Integrates with VS Code undo history.',
+    inputSchema: WriteFileInputSchema
+  }, WriteFileExecute as never)
+  server.registerTool('write_terminal', {
+    description: 'Send input/text to a managed terminal (e.g. answer a prompt, send a command)',
+    inputSchema: WriteTerminalInputSchema
+  }, (args, _extra) => WriteTerminalExecute(terminalManager, args as { id: string; input: string; addNewline?: boolean }))
+}
