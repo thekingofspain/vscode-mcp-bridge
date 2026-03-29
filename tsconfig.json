@@ -7,22 +7,45 @@
       "ES2022"
     ],
     "outDir": "out",
-    "rootDir": "src",
+    "rootDir": ".",
     "strict": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "baseUrl": "src",
     "paths": {
-      "@commands/*": ["commands/*"],
-      "@config/*": ["config/*"],
-      "@extension/*": ["extension/*"],
-      "@mcp/*": ["mcp/*"],
-      "@services/*": ["services/*"],
-      "@type-defs/*": ["types/*"],
-      "@utils/*": ["utils/*"],
-      "@vscode-api/*": ["vscode-api/*"]
+      "@commands/*": [
+        "commands/*"
+      ],
+      "@config/*": [
+        "config/*"
+      ],
+      "@extension/*": [
+        "extension/*"
+      ],
+      "@mcp/*": [
+        "mcp/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@type-defs/*": [
+        "types/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ],
+      "@vscode-api/*": [
+        "vscode-api/*"
+      ],
+      "@generated/*": [
+        "../.generated/*"
+      ]
     }
   },
+  "include": [
+    "src/**/*",
+    ".generated/**/*"
+  ],
   "exclude": [
     "node_modules",
     "out",

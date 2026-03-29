@@ -2,6 +2,7 @@
 // Manages HTTP server lifecycle and request routing
 
 import { getServerHost, getSettings } from '@config/Settings.js';
+import { MCP_SERVER_INSTRUCTIONS } from '@generated/instructions.js';
 import { registerAllTools } from '@mcp/tools/registry.js';
 import { ContextPusher } from '@services/ContextPusher.js';
 import { TerminalManager } from '@services/TerminalManager.js';
@@ -15,7 +16,6 @@ import {
   handleUnauthorized,
   setCorsHeaders,
 } from './handlers.js';
-import { MCP_SERVER_INSTRUCTIONS } from './instructions.js';
 import type { SessionManager } from './sessionManager.js';
 import { createSessionManager } from './sessionManager.js';
 

@@ -1,11 +1,11 @@
-// AUTO-GENERATED - DO NOT EDIT
-// Source: instructions.yaml
-// Run: npm run generate:instructions
+---
+version: "0.2.5"
+server_name: vscode-mcp-bridge
+---
 
-export const MCP_SERVER_VERSION = '0.2.5';
-export const MCP_SERVER_NAME = 'vscode-mcp-bridge';
+# MCP Server Instructions for AI Agents
 
-export const MCP_SERVER_INSTRUCTIONS = `You are connected to a live VS Code instance. The following suggestions can help you get the most out of these tools:
+You are connected to a live VS Code instance. The following suggestions can help you get the most out of these tools:
 
 ## WRITING FILES
 - Consider calling show_diff before write_file or create_file so the user can review changes visually in VS Code before they are applied.
@@ -38,4 +38,3 @@ export const MCP_SERVER_INSTRUCTIONS = `You are connected to a live VS Code inst
 ## GENERAL
 - get_workspace_info can orient you at the start of a session if you don't know the workspace root or tech stack.
 - VS Code's native tools (LSP, git, symbols) are often faster and more semantically aware than raw file search.
-`;
