@@ -1,6 +1,8 @@
 node_modules/
+dist/
 out/
 *.vsix
 *.js.map
 .mcp.json
 .claude/settings.local.json
+types/

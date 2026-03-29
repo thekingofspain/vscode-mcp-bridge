@@ -1,3 +1,3 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
-export const GetActiveFileInputSchema = z.object({})
+export const GetActiveFileInputSchema = z.object({});

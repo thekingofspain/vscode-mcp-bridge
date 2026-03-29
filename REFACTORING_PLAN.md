@@ -1,5 +1,7 @@
 # MCP Bridge Codebase Refactoring Plan
 
+> **⚠️ HISTORICAL DOCUMENT** - This plan was partially implemented with modifications. See [REFACTORING_PROGRESS.md](./REFACTORING_PROGRESS.md) for actual implementation status.
+
 ## Overview
 
 This document outlines a comprehensive refactoring plan combining:
@@ -7,6 +9,32 @@ This document outlines a comprehensive refactoring plan combining:
 - **Plan B**: API Owner + Feature Modules (by domain/function)
 
 The hybrid approach provides clear ownership boundaries while maintaining feature cohesion.
+
+---
+
+## Implementation Status
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| Phase 1: Foundation | ✅ Complete | Directory structure, code gen, YAML pipeline |
+| Phase 2: Bridge Layer | ✅ Complete | Implemented as `src/vscode-api/` instead of `src/bridge/` |
+| Phase 2: Command Migration | ✅ Complete | All 37 commands migrated to YAML-driven modules |
+| Phase 3: Extension Layer | ❌ Not started | `extension.ts` still monolithic |
+| Phase 4: MCP Layer + YAML | ✅ Complete | `src/mcp/tools/registry.ts` auto-generated |
+| Phase 5: Services + Cleanup | ⏳ Partial | ContextPusher/TerminalManager in `services/`, DiffService not extracted |
+
+---
+
+## Architecture Actually Implemented
+
+The actual implementation diverged from this plan in the following ways:
+
+| Plan Proposed | Actual Implementation |
+|--------------|----------------------|
+| `src/bridge/` directory | `src/vscode-api/` directory |
+| `src/mcp/tools/definitions/*.yaml` | `src/commands/*/definition.yaml` (per-command folders) |
+| `src/mcp/tools/handlers/*.ts` (category-based) | `src/commands/*/handler.ts` (one per tool) |
+| `src/tools/index.ts` | `src/mcp/tools/registry.ts` |
 
 ---
 

@@ -1,37 +1,36 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { getDocumentSymbols } from '../../vscode-api/workspace/symbols.js'
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
-import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { getDocumentSymbols } from '@vscode-api/workspace/symbols.js';
+import { SymbolKind } from 'vscode';
+import type { DocumentSymbol } from 'vscode';
+import type { DocumentSymbolsArgs } from '@type-defs/index.js';
 
-function symbolKindName(kind: number): string {
-  const kinds = ['File', 'Module', 'Namespace', 'Package', 'Class', 'Method', 'Property', 'Field', 'Constructor',
-    'Enum', 'Interface', 'Function', 'Variable', 'Constant', 'String', 'Number', 'Boolean', 'Array', 'Object',
-    'Key', 'Null', 'EnumMember', 'Struct', 'Event', 'Operator', 'TypeParameter']
-  return kinds[kind] ?? 'Unknown'
+function symbolKindName(kind: SymbolKind): string {
+  return SymbolKind[kind];
 }
 
-function serializeSymbols(symbols: any[]): unknown {
+function serializeSymbols(symbols: DocumentSymbol[]): unknown {
   return symbols.map(s => ({
     name: s.name,
     kind: symbolKindName(s.kind),
     startLine: s.range.start.line,
     endLine: s.range.end.line,
-    detail: s.detail ?? null,
-    children: s.children ? serializeSymbols(s.children) : [],
-  }))
+    detail: s.detail,
+    children: s.children.length > 0 ? serializeSymbols(s.children) : [],
+  }));
 }
 
 export async function execute(
-  args: { filePath: string }
+  args: DocumentSymbolsArgs
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
-  const symbols = await getDocumentSymbols(args.filePath)
-  const serialized = serializeSymbols(symbols ?? [])
-  return { content: [{ type: 'text', text: JSON.stringify(serialized) }] }
+  const symbols = await getDocumentSymbols(args.filePath);
+  const serialized = serializeSymbols(symbols);
+
+  return { content: [{ type: 'text', text: JSON.stringify(serialized) }] };
 }
 
 export function registerGetDocumentSymbols(server: McpServer): void {
   server.registerTool('get_document_symbols', {
     description: 'Get all symbols (functions, classes, variables, etc.) in a file',
     inputSchema: {}
-  }, execute as never)
+  }, execute as never);
 }

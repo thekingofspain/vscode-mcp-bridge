@@ -1,0 +1,14 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{ts,tsx,js,jsx}]
+indent_style = space
+indent_size = 2
+
+# Add blank line after single-line if statements with return
+# Add blank line before if statements
+# Add blank line after variable declarations

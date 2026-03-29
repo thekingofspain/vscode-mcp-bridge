@@ -1,20 +1,26 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import type { TerminalManager } from '../../services/TerminalManager.js'
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
-import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { TerminalManager } from '@services/TerminalManager.js';
+import type { TerminalOperationArgs } from '@type-defs/index.js';
 
-export async function execute(
+interface ReadTerminal
+  extends TerminalOperationArgs {
+  lines?: number
+}
+
+export function execute(
   terminalManager: TerminalManager,
-  args: { id: string; lines?: number }
-): Promise<{ content: [{ type: 'text'; text: string }] }> {
-  const result = terminalManager.readOutput(args.id, args.lines)
-  if (!result) throw new Error(`Terminal '${args.id}' not found`)
-  return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+  args: ReadTerminal
+): { content: [{ type: 'text'; text: string }] } {
+  const result = terminalManager.readOutput(args.id, args.lines);
+
+  if (!result) throw new Error(`Terminal '${args.id}' not found`);
+
+  return { content: [{ type: 'text', text: JSON.stringify(result) }] };
 }
 
 export function registerReadTerminal(server: McpServer, terminalManager: TerminalManager): void {
   server.registerTool('read_terminal', {
     description: 'Read recent output from a managed terminal. Returns the tail of the output buffer.',
     inputSchema: {}
-  }, (args: Record<string, unknown>, _extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => execute(terminalManager, args as { id: string; lines?: number }))
+  }, (args: Record<string, unknown>) => execute(terminalManager, args as { id: string; lines?: number }));
 }

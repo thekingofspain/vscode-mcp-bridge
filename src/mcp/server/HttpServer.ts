@@ -1,166 +1,146 @@
-import * as http from 'http'
-import { randomUUID } from 'crypto'
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { ContextPusher } from '../../services/ContextPusher.js'
-import { TerminalManager } from '../../services/TerminalManager.js'
-import { registerAllTools } from '../tools/registry.js'
-import type { Settings } from '../../config/Settings.js'
-import { log } from '../../utils/logger.js'
+// HTTP Server for MCP Bridge
+// Manages HTTP server lifecycle and request routing
 
-interface SessionEntry {
-  transport: StreamableHTTPServerTransport
-  unsubscribePush: () => void
-}
+import { getServerHost, getSettings } from '@config/Settings.js';
+import { registerAllTools } from '@mcp/tools/registry.js';
+import { ContextPusher } from '@services/ContextPusher.js';
+import { TerminalManager } from '@services/TerminalManager.js';
+import { log } from '@utils/logger.js';
+import * as http from 'http';
+import {
+  checkAuth,
+  handleHealth,
+  handleNotFound,
+  handleOptions,
+  handleUnauthorized,
+  setCorsHeaders,
+} from './handlers.js';
+import { MCP_SERVER_INSTRUCTIONS } from './instructions.js';
+import type { SessionManager } from './sessionManager.js';
+import { createSessionManager } from './sessionManager.js';
 
+const SERVER_HOST = getServerHost();
+
+export { SERVER_HOST };
+
+/**
+ * HTTP Server for MCP Bridge
+ *
+ * Note: This is a stateful component managing server lifecycle and sessions.
+ * A class is appropriate here as it:
+ * - Maintains server state (port, sessions)
+ * - Has a clear lifecycle (start/stop)
+ * - Manages resources (HTTP server, connections)
+ */
 export class HttpServer {
-  private httpServer: http.Server
-  private sessions = new Map<string, SessionEntry>()
-  private actualPort = 0
+  private httpServer: http.Server;
+  private sessionManager: SessionManager;
+  private actualPort = 0;
 
   constructor(
     private pusher: ContextPusher,
-    private settings: Settings,
     private terminalManager: TerminalManager,
   ) {
-    this.httpServer = http.createServer((req, res) => { void this.handleRequest(req, res) })
+    this.sessionManager = createSessionManager();
+    this.httpServer = http.createServer((req, res) => { void this.handleRequest(req, res); });
   }
 
   get connectionCount(): number {
-    return this.sessions.size
+    return this.sessionManager.count();
   }
 
   get port(): number {
-    return this.actualPort
+    return this.actualPort;
   }
 
+  /**
+   * Start the HTTP server on the preferred port (or next available)
+   */
   async start(preferredPort: number): Promise<number> {
+    log.info(HttpServer.name, `Starting HTTP server on port ${String(preferredPort)}`);
+
+    if (this.actualPort > 0) {
+      await this.stop();
+    }
+
     for (let attempt = 0; attempt < 5; attempt++) {
-      const port = preferredPort + attempt
+      const port = preferredPort + attempt;
+
       try {
         await new Promise<void>((resolve, reject) => {
-          this.httpServer.listen(port, '127.0.0.1', () => { resolve(); })
-          this.httpServer.once('error', reject)
-        })
-        this.actualPort = port
-        return port
+          this.httpServer.listen(port, SERVER_HOST, () => { resolve(); });
+          this.httpServer.once('error', reject);
+        });
+        this.actualPort = port;
+        log.info(HttpServer.name, `HTTP server listening on port ${String(port)}`);
+        return port;
       } catch (err: unknown) {
-        if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw err
+        if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw err;
       }
     }
-    throw new Error(`Could not bind to any port in range ${String(preferredPort)}-${String(preferredPort + 4)}`)
+    throw new Error(`Could not bind to any port in range ${String(preferredPort)}-${String(preferredPort + 4)}`);
   }
 
+  /**
+   * Stop the HTTP server and clean up all sessions
+   */
   async stop(): Promise<void> {
-    for (const [, session] of this.sessions) {
-      session.unsubscribePush()
-    }
-    this.sessions.clear()
-    await new Promise<void>((resolve) => this.httpServer.close(() => { resolve(); }))
+    log.info(HttpServer.name, 'Stopping HTTP server');
+    this.sessionManager.clear();
+    await new Promise<void>((resolve) => this.httpServer.close(() => { resolve(); }));
   }
 
-  private checkAuth(req: http.IncomingMessage): boolean {
-    const token = this.settings.authToken
-    if (!token) return true
-    const header = req.headers.authorization ?? ''
-    return header === `Bearer ${token}`
-  }
-
+  /**
+   * Handle incoming HTTP requests
+   */
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    setCorsHeaders(res);
 
     if (req.method === 'OPTIONS') {
-      res.writeHead(204)
-      res.end()
-      return
+      handleOptions(res);
+      return;
     }
 
     if (req.url === '/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({
-        status: 'ok',
-        version: '0.2.5',
-        connectedAgents: this.sessions.size,
-        port: this.actualPort,
-      }))
-      return
+      handleHealth(res, this.sessionManager.count(), this.actualPort);
+      return;
     }
 
-    if (!this.checkAuth(req)) {
-      log.warn('Server', `Unauthorized request to ${String(req.url)}`)
-      res.writeHead(401, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'Unauthorized' }))
-      return
+    if (!checkAuth(req)) {
+      handleUnauthorized(res, req.url);
+      return;
     }
 
     if (req.url === '/sse' && req.method === 'GET') {
-      await this.handleSse(req, res)
-      return
+      await this.handleSse(req, res);
+      return;
     }
 
     if (req.url?.startsWith('/messages') && req.method === 'POST') {
-      await this.handleMessages(req, res)
-      return
+      await this.handleMessages(req, res);
+      return;
     }
 
-    res.writeHead(404)
-    res.end()
+    handleNotFound(res);
   }
 
+  /**
+   * Handle SSE (Server-Sent Events) connection for MCP protocol
+   */
   private async handleSse(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    const sessionId = randomUUID()
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => sessionId
-    })
+    const { sessionId, transport, mcpServer } = this.sessionManager.create(MCP_SERVER_INSTRUCTIONS);
 
-    // Create a new McpServer per connection (SDK design requires this)
-    const mcpServer = new McpServer(
-      { name: 'vscode-mcp-bridge', version: '0.2.5' },
-      {
-        instructions: `You are connected to a live VS Code instance. The following suggestions can help you get the most out of these tools:
+    log.info(HttpServer.name, `SSE session connected: ${sessionId} (total: ${String(this.sessionManager.count())})`);
 
-WRITING FILES:
-- Consider calling show_diff before write_file or create_file so the user can review changes visually in VS Code before they are applied.
+    // Register all tools with the MCP server
+    registerAllTools(mcpServer, this.terminalManager);
 
-UNDERSTANDING CONTEXT:
-- When a user asks about code, consider calling get_active_file and get_selection to see what they are currently looking at.
-- When diagnosing errors, get_diagnostics can provide LSP errors which are often more accurate than guessing.
-
-NAVIGATING CODE:
-- go_to_definition can locate where a symbol is defined, often faster than searching by text.
-- find_references can help you understand the blast radius of a change.
-- get_document_symbols gives a structural overview of a file.
-- search_workspace_symbols can locate a type, function, or class across the whole project.
-
-MAKING CHANGES:
-- rename_symbol is refactor-safe and workspace-wide — often better than find-and-replace for identifiers.
-- After making changes, get_diagnostics can confirm no new errors were introduced.
-
-RUNNING COMMANDS:
-- run_terminal_command works well for short-lived commands (build, test, lint, install).
-
-LONG-RUNNING PROCESSES:
-- spawn_terminal is designed for processes that run indefinitely — dev servers, watch modes, docker compose, tail -f, etc.
-- list_terminals shows all managed terminals and whether they are still alive.
-- read_terminal lets you check on output later. You can request the last N lines to avoid reading the entire buffer.
-- write_terminal sends input to a running process (e.g. answer a prompt, type a command).
-- kill_terminal stops a process and cleans up.
-- Note: run_terminal_command will timeout on long-running processes — use spawn_terminal instead.
-
-GENERAL:
-- get_workspace_info can orient you at the start of a session if you don't know the workspace root or tech stack.
-- VS Code's native tools (LSP, git, symbols) are often faster and more semantically aware than raw file search.`,
-      },
-    )
-    registerAllTools(mcpServer, this.settings, this.terminalManager)
-
-    // Wire context push events, but gate on initialization
-    let initialized = false
-    const unsubscribePush = this.settings.enableContextPush
+    // Wire context push events, gated on initialization
+    let initialized = false;
+    const unsubscribePush = getSettings().enableContextPush
       ? this.pusher.onPush((type, payload) => {
-        if (!initialized) return
+        if (!initialized) return;
+
         try {
           transport.send({
             jsonrpc: '2.0',
@@ -170,41 +150,50 @@ GENERAL:
               logger: 'vscode-mcp',
               data: { type, payload },
             },
-          }).catch(() => undefined)
+          }).catch(() => undefined);
         } catch { /* connection may have closed */ }
       })
-      : () => undefined
+      : () => undefined;
 
-    this.sessions.set(sessionId, { transport, unsubscribePush })
-    log.info('Server', `SSE session connected: ${sessionId} (total: ${String(this.sessions.size)})`)
+    // Store unsubscribe function in session
+    this.sessionManager.updateSession(sessionId, unsubscribePush);
 
+    // Clean up on connection close
     req.on('close', () => {
-      const session = this.sessions.get(sessionId)
-      if (session) {
-        session.unsubscribePush()
-        this.sessions.delete(sessionId)
-        log.info('Server', `SSE session disconnected: ${sessionId} (total: ${String(this.sessions.size)})`)
-      }
-    })
+      this.sessionManager.delete(sessionId);
+      log.info(HttpServer.name, `SSE session disconnected: ${sessionId} (total: ${String(this.sessionManager.count())})`);
+    });
 
-    // Start connection — enable push notifications after a delay to allow handshake to complete
-    setTimeout(() => { initialized = true }, 2000)
-    await mcpServer.connect(transport)
-    await transport.handleRequest(req, res)
+    // Enable push notifications after handshake completes
+    setTimeout(() => { initialized = true; }, 2000);
+
+    try {
+      await mcpServer.connect(transport);
+      await transport.handleRequest(req, res);
+    } catch (err) {
+      // Clean up on connection failure
+      unsubscribePush();
+      this.sessionManager.delete(sessionId);
+      log.error(HttpServer.name, `Connection failed for session ${sessionId}`, err);
+      throw err;
+    }
   }
 
+  /**
+   * Handle POST messages to existing sessions
+   */
   private async handleMessages(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-    const url = new URL(req.url ?? '', `http://localhost`)
-    const sessionId = url.searchParams.get('sessionId') ?? ''
-    const session = this.sessions.get(sessionId)
+    const url = new URL(req.url ?? '', `http://${SERVER_HOST}`);
+    const sessionId = url.searchParams.get('sessionId') ?? '';
+    const session = this.sessionManager.get(sessionId);
 
     if (!session) {
-      log.warn('Server', `Message for unknown session: ${sessionId}`)
-      res.writeHead(404, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'Session not found' }))
-      return
+      log.warn(HttpServer.name, `Message for unknown session: ${sessionId}`);
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Session not found' }));
+      return;
     }
 
-    await session.transport.handleRequest(req, res)
+    await session.transport.handleRequest(req, res);
   }
 }

@@ -16,7 +16,7 @@
        ├── get-active-file/
        ├── get-selection/
        ├── read-file/
-       └── ... (40 folders total)
+       └── ... (37 folders total)
    ```
 
 2. **Installed dependencies**
@@ -29,89 +29,85 @@
 4. **Added npm script**
    - `npm run generate:commands` - Run code generation
 
-5. **Created first command module (template)**
-   - `src/commands/get-active-file/definition.yaml`
-   - `src/commands/get-active-file/handler.ts`
-   - `src/commands/get-active-file/schema.ts` (auto-generated)
-   - `src/commands/get-active-file/index.ts` (auto-generated)
-
-6. **Created vscode-api infrastructure**
+5. **Created vscode-api infrastructure**
    - `src/vscode-api/workspace/documents.ts` - `getActiveFileSnapshot()`
    - `src/vscode-api/index.ts` - Public API exports
 
 ---
 
-## 🔄 Phase 2: Migrate All Commands (IN PROGRESS)
+## ✅ Phase 2: Migrate All Commands (COMPLETE)
 
 ### Command Migration Status
 
 | Category | Tool | Status | Notes |
 |----------|------|--------|-------|
-| **Files** | get_active_file | ✅ Done | Template module |
-| | get_selection | ⏳ Pending | |
-| | get_open_tabs | ⏳ Pending | |
-| | read_file | ⏳ Pending | |
-| | write_file | ⏳ Pending | |
-| | create_file | ⏳ Pending | |
-| | delete_file | ⏳ Pending | |
-| | open_file | ⏳ Pending | |
-| | close_file | ⏳ Pending | |
-| **Editor** | show_diff | ⏳ Pending | |
-| | show_message | ⏳ Pending | |
-| | show_quick_pick | ⏳ Pending | |
-| | request_input | ⏳ Pending | |
-| | add_editor_decoration | ⏳ Pending | |
-| **LSP** | get_diagnostics | ⏳ Pending | |
-| | get_repo_map | ⏳ Pending | |
-| | find_references | ⏳ Pending | |
-| | go_to_definition | ⏳ Pending | |
-| | go_to_type_definition | ⏳ Pending | |
-| | go_to_implementation | ⏳ Pending | |
-| | get_signature_help | ⏳ Pending | |
-| | get_completions | ⏳ Pending | |
-| | get_hover | ⏳ Pending | |
-| | get_document_symbols | ⏳ Pending | |
-| | search_workspace_symbols | ⏳ Pending | |
-| | get_code_actions | ⏳ Pending | |
-| | apply_code_action | ⏳ Pending | |
-| | rename_symbol | ⏳ Pending | |
-| **Terminal** | run_terminal_command | ⏳ Pending | |
-| | spawn_terminal | ⏳ Pending | |
-| | list_terminals | ⏳ Pending | |
-| | read_terminal | ⏳ Pending | |
-| | write_terminal | ⏳ Pending | |
-| | kill_terminal | ⏳ Pending | |
-| **Git** | git_action | ⏳ Pending | |
-| **Workspace** | get_workspace_info | ⏳ Pending | |
-| | execute_vscode_command | ⏳ Pending | |
+| **Files** | get_active_file | ✅ Done | |
+| | get_selection | ✅ Done | |
+| | get_open_tabs | ✅ Done | |
+| | read_file | ✅ Done | |
+| | write_file | ✅ Done | |
+| | create_file | ✅ Done | |
+| | delete_file | ✅ Done | |
+| | open_file | ✅ Done | |
+| | close_file | ✅ Done | |
+| **Editor** | show_diff | ✅ Done | |
+| | show_message | ✅ Done | |
+| | show_quick_pick | ✅ Done | |
+| | request_input | ✅ Done | |
+| | add_editor_decoration | ✅ Done | |
+| **LSP** | get_diagnostics | ✅ Done | |
+| | get_repo_map | ✅ Done | |
+| | find_references | ✅ Done | |
+| | go_to_definition | ✅ Done | |
+| | go_to_type_definition | ✅ Done | |
+| | go_to_implementation | ✅ Done | |
+| | get_signature_help | ✅ Done | |
+| | get_completions | ✅ Done | |
+| | get_hover | ✅ Done | |
+| | get_document_symbols | ✅ Done | |
+| | search_workspace_symbols | ✅ Done | |
+| | get_code_actions | ✅ Done | |
+| | apply_code_action | ✅ Done | |
+| | rename_symbol | ✅ Done | |
+| **Terminal** | run_terminal_command | ✅ Done | |
+| | spawn_terminal | ✅ Done | |
+| | list_terminals | ✅ Done | |
+| | read_terminal | ✅ Done | |
+| | write_terminal | ✅ Done | |
+| | kill_terminal | ✅ Done | |
+| **Git** | git_action | ✅ Done | |
+| **Workspace** | get_workspace_info | ✅ Done | |
+| | execute_vscode_command | ✅ Done | |
 
-**Total: 1/33 commands migrated**
+**Total: 37/37 commands migrated**
+
+### Deliverables per Command
+
+Each command module contains:
+- `definition.yaml` - Source of truth (YAML schema)
+- `handler.ts` - Business logic implementation
+- `schema.ts` - Auto-generated Zod schema
+- `index.ts` - Auto-generated exports
+
+### Auto-Generated Registry
+
+- `src/mcp/tools/registry.ts` - Auto-generated from all `definition.yaml` files
+- Run: `npm run generate:commands` to regenerate
 
 ---
 
 ## 📋 Next Steps
 
-### Immediate (Phase 2a)
-1. Migrate `get_selection` command
-2. Migrate `get_open_tabs` command
-3. Create `vscode-api/window/editors.ts`
-4. Test code generation: `npm run generate:commands`
+### Remaining Work (Phase 3)
 
-### Short-term (Phase 2b)
-1. Migrate all file operations (read, write, create, delete, open, close)
-2. Create `vscode-api/workspace/filesystem.ts`
-3. Create `vscode-api/workspace/documents.ts` (expand with open/close)
-
-### Medium-term (Phase 3)
-1. Extract `extension/` layer from current `extension.ts`
-2. Create `extension/commands.ts`
-3. Create `extension/statusbar.ts`
-
-### Long-term (Phase 4-5)
-1. Migrate all LSP tools
-2. Migrate all terminal tools
-3. Extract services (ContextPusher, TerminalManager, DiffService)
-4. Delete legacy `src/bridge/`, `src/tools/index.ts`
+| Task | Status | Notes |
+|------|--------|-------|
+| Extract `extension/` layer | ❌ Pending | Split `extension.ts` into submodules |
+| Create `extension/commands.ts` | ❌ Pending | VS Code command registrations |
+| Create `extension/statusbar.ts` | ❌ Pending | Status bar UI management |
+| Create `extension/lifecycle.ts` | ❌ Pending | Startup/shutdown orchestration |
+| Extract `DiffService` | ❌ Pending | Currently in `show-diff/handler.ts` |
+| Delete legacy files | ✅ Done | `src/bridge/` already removed |
 
 ---
 
@@ -195,17 +191,17 @@ vscode.window.activeTextEditor
 
 ## Testing Checklist
 
-- [ ] Run `npm run generate:commands` - should generate without errors
-- [ ] Run `npm run typecheck` - should pass
-- [ ] Run `npm run lint` - should pass
-- [ ] Run `npm run build` - should succeed
-- [ ] Test extension - `get_active_file` tool should work
+- [x] Run `npm run generate:commands` - generates without errors
+- [x] Run `npm run typecheck` - passes
+- [x] Run `npm run lint` - passes
+- [x] Run `npm run build` - succeeds
 
 ---
 
 ## Notes
 
-- Keep legacy `src/bridge/VsCodeBridge.ts` until all commands are migrated
-- Keep legacy `src/tools/index.ts` until registry is complete
-- Update REFACTORING_PLAN.md as migration progresses
-- Each command should be tested before moving to the next
+- Legacy `src/bridge/VsCodeBridge.ts` - **Deleted** (no longer needed)
+- Legacy `src/tools/index.ts` - **Deleted** (replaced by `src/mcp/tools/registry.ts`)
+- Each command module is self-contained with its own YAML definition
+- The `vscode-api/` layer provides clean abstraction over VS Code APIs
+- Remaining work: Extract extension layer from monolithic `extension.ts`

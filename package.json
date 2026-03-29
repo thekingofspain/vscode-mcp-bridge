@@ -5,6 +5,7 @@
   "version": "0.2.5",
   "publisher": "jhamama",
   "private": true,
+  "type": "module",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -62,6 +63,11 @@
           ],
           "default": "childProcess",
           "description": "How to run terminal commands. childProcess captures output reliably. shellIntegration shows in VS Code terminal (requires VS Code 1.93+)"
+        },
+        "mcpServer.serverHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host address for MCP server. Use 127.0.0.1 for local-only access, or 0.0.0.0 to allow external connections."
         }
       }
     },
@@ -90,12 +96,16 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build:prod",
+    "prebuild": "npm run generate:instructions",
     "build": "node esbuild.config.js",
     "build:prod": "node esbuild.config.js --production",
     "watch": "node esbuild.config.js --watch",
     "typecheck": "tsc --noEmit",
     "lint": "npm run typecheck && npx eslint .",
+    "lint:fix": "npx eslint . --fix",
     "generate:commands": "node --loader ts-node/esm scripts/generate-commands.ts",
+    "generate:instructions": "node scripts/generate-instructions.js",
+    "update-imports": "tsc scripts/update-imports.ts --outDir scripts --module Node16 --moduleResolution Node16 --target ES2022 --esModuleInterop --skipLibCheck && node scripts/update-imports.js && del scripts\\update-imports.js",
     "package": "vsce package"
   },
   "dependencies": {
@@ -104,6 +114,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
     "@types/vscode": "^1.110.0",
@@ -115,5 +126,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.57.2"
+  },
+  "ts-node": {
+    "esm": true,
+    "transpileOnly": true
   }
 }

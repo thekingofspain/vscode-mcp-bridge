@@ -1,0 +1,39 @@
+# MCP Server Instructions for AI Agents
+
+version: "0.2.5"
+server_name: vscode-mcp-bridge
+
+instructions: |
+  You are connected to a live VS Code instance. The following suggestions can help you get the most out of these tools:
+
+  ## WRITING FILES
+  - Consider calling show_diff before write_file or create_file so the user can review changes visually in VS Code before they are applied.
+
+  ## UNDERSTANDING CONTEXT
+  - When a user asks about code, consider calling get_active_file and get_selection to see what they are currently looking at.
+  - When diagnosing errors, get_diagnostics can provide LSP errors which are often more accurate than guessing.
+
+  ## NAVIGATING CODE
+  - go_to_definition can locate where a symbol is defined, often faster than searching by text.
+  - find_references can help you understand the blast radius of a change.
+  - get_document_symbols gives a structural overview of a file.
+  - search_workspace_symbols can locate a type, function, or class across the whole project.
+
+  ## MAKING CHANGES
+  - rename_symbol is refactor-safe and workspace-wide — often better than find-and-replace for identifiers.
+  - After making changes, get_diagnostics can confirm no new errors were introduced.
+
+  ## RUNNING COMMANDS
+  - run_terminal_command works well for short-lived commands (build, test, lint, install).
+
+  ## LONG-RUNNING PROCESSES
+  - spawn_terminal is designed for processes that run indefinitely — dev servers, watch modes, docker compose, tail -f, etc.
+  - list_terminals shows all managed terminals and whether they are still alive.
+  - read_terminal lets you check on output later. You can request the last N lines to avoid reading the entire buffer.
+  - write_terminal sends input to a running process (e.g. answer a prompt, type a command).
+  - kill_terminal stops a process and cleans up.
+  - Note: run_terminal_command will timeout on long-running processes — use spawn_terminal instead.
+
+  ## GENERAL
+  - get_workspace_info can orient you at the start of a session if you don't know the workspace root or tech stack.
+  - VS Code's native tools (LSP, git, symbols) are often faster and more semantically aware than raw file search.

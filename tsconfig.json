@@ -10,11 +10,23 @@
     "rootDir": "src",
     "strict": true,
     "skipLibCheck": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": "src",
+    "paths": {
+      "@commands/*": ["commands/*"],
+      "@config/*": ["config/*"],
+      "@extension/*": ["extension/*"],
+      "@mcp/*": ["mcp/*"],
+      "@services/*": ["services/*"],
+      "@type-defs/*": ["types/*"],
+      "@utils/*": ["utils/*"],
+      "@vscode-api/*": ["vscode-api/*"]
+    }
   },
   "exclude": [
     "node_modules",
     "out",
-    "scripts"
+    "scripts",
+    "types"
   ]
 }

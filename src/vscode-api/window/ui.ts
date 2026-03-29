@@ -1,25 +1,27 @@
-import * as vscode from 'vscode'
+import type { MessageSeverity } from '@type-defs/index.js';
+import * as vscode from 'vscode';
 
 /**
  * Display a notification message to the user in the VS Code UI
  */
 export async function showMessage(
   message: string,
-  level: 'info' | 'warning' | 'error' = 'info',
+  level: MessageSeverity = 'info',
   items: string[] = []
 ): Promise<string | undefined> {
   if (level === 'error') {
     return items.length > 0
       ? vscode.window.showErrorMessage(message, ...items)
-      : vscode.window.showErrorMessage(message)
+      : vscode.window.showErrorMessage(message);
   } else if (level === 'warning') {
     return items.length > 0
       ? vscode.window.showWarningMessage(message, ...items)
-      : vscode.window.showWarningMessage(message)
+      : vscode.window.showWarningMessage(message);
   }
+
   return items.length > 0
     ? vscode.window.showInformationMessage(message, ...items)
-    : vscode.window.showInformationMessage(message)
+    : vscode.window.showInformationMessage(message);
 }
 
 /**
@@ -30,10 +32,13 @@ export async function showQuickPick(
   placeHolder?: string,
   canPickMany = false
 ): Promise<string[] | string | undefined> {
-  const result = await vscode.window.showQuickPick(items, { placeHolder, canPickMany })
-  if (!result) return undefined
-  if (Array.isArray(result)) return result
-  return result
+  const result = await vscode.window.showQuickPick(items, { placeHolder, canPickMany });
+
+  if (!result) return undefined;
+
+  if (Array.isArray(result)) return result;
+
+  return result;
 }
 
 /**
@@ -44,5 +49,5 @@ export async function requestInput(
   placeHolder?: string,
   value?: string
 ): Promise<string | undefined> {
-  return vscode.window.showInputBox({ prompt, placeHolder, value })
+  return vscode.window.showInputBox({ prompt, placeHolder, value });
 }

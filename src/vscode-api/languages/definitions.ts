@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import * as vscode from 'vscode';
 
 /**
  * Get the definition location(s) of a symbol at a given position
@@ -8,13 +8,14 @@ export async function getDefinition(
   line: number,
   char: number
 ): Promise<(vscode.Location | vscode.LocationLink)[]> {
-  const uri = vscode.Uri.file(filePath)
-  const pos = new vscode.Position(line, char)
+  const uri = vscode.Uri.file(filePath);
+  const pos = new vscode.Position(line, char);
+
   return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
     'vscode.executeDefinitionProvider',
     uri,
     pos
-  )
+  );
 }
 
 /**
@@ -25,13 +26,14 @@ export async function getTypeDefinition(
   line: number,
   char: number
 ): Promise<(vscode.Location | vscode.LocationLink)[]> {
-  const uri = vscode.Uri.file(filePath)
-  const pos = new vscode.Position(line, char)
+  const uri = vscode.Uri.file(filePath);
+  const pos = new vscode.Position(line, char);
+
   return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
     'vscode.executeTypeDefinitionProvider',
     uri,
     pos
-  )
+  );
 }
 
 /**
@@ -42,11 +44,12 @@ export async function getImplementation(
   line: number,
   char: number
 ): Promise<(vscode.Location | vscode.LocationLink)[]> {
-  const uri = vscode.Uri.file(filePath)
-  const pos = new vscode.Position(line, char)
+  const uri = vscode.Uri.file(filePath);
+  const pos = new vscode.Position(line, char);
+
   return vscode.commands.executeCommand<(vscode.Location | vscode.LocationLink)[]>(
     'vscode.executeImplementationProvider',
     uri,
     pos
-  )
+  );
 }

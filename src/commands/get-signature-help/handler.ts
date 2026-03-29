@@ -1,16 +1,16 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { getSignatureHelp } from '../../vscode-api/languages/signature.js'
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
-import type { ServerRequest, ServerNotification } from '@modelcontextprotocol/sdk/types.js'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { getSignatureHelp } from '@vscode-api/languages/signature.js';
+import type { FilePositionWithTrigger } from '@type-defs/index.js';
 
 export async function execute(
-  args: { filePath: string; line: number; character: number; triggerCharacter?: string }
+  args: FilePositionWithTrigger
 ): Promise<{ content: [{ type: 'text'; text: string }] }> {
-  const help = await getSignatureHelp(args.filePath, args.line, args.character, args.triggerCharacter)
+  const help = await getSignatureHelp(args.filePath, args.line, args.character, args.triggerCharacter);
+
   if (!help) {
-    return { content: [{ type: 'text', text: JSON.stringify({ activeSignature: 0, activeParameter: 0, signatures: [] }) }] }
+    return { content: [{ type: 'text', text: JSON.stringify({ activeSignature: 0, activeParameter: 0, signatures: [] }) }] };
   }
-  
+
   const serialized = {
     activeSignature: help.activeSignature,
     activeParameter: help.activeParameter,
@@ -22,13 +22,14 @@ export async function execute(
         documentation: typeof p.documentation === 'string' ? p.documentation : p.documentation?.value
       }))
     }))
-  }
-  return { content: [{ type: 'text', text: JSON.stringify(serialized) }] }
+  };
+
+  return { content: [{ type: 'text', text: JSON.stringify(serialized) }] };
 }
 
 export function registerGetSignatureHelp(server: McpServer): void {
   server.registerTool('get_signature_help', {
     description: 'Get parameter hints and signature information for a function call using LSP',
     inputSchema: {}
-  }, execute as never)
+  }, execute as never);
 }

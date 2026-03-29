@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import * as vscode from 'vscode';
 
 /**
  * Get hover information (type info, documentation) for a symbol at a given position
@@ -8,11 +8,12 @@ export async function getHover(
   line: number,
   char: number
 ): Promise<vscode.Hover[]> {
-  const uri = vscode.Uri.file(filePath)
-  const pos = new vscode.Position(line, char)
+  const uri = vscode.Uri.file(filePath);
+  const pos = new vscode.Position(line, char);
+
   return vscode.commands.executeCommand<vscode.Hover[]>(
     'vscode.executeHoverProvider',
     uri,
     pos
-  )
+  );
 }

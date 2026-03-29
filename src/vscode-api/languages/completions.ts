@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import * as vscode from 'vscode';
 
 /**
  * Get IntelliSense completion suggestions at a specific position
@@ -9,12 +9,13 @@ export async function getCompletions(
   char: number,
   triggerCharacter?: string
 ): Promise<vscode.CompletionList | undefined> {
-  const uri = vscode.Uri.file(filePath)
-  const pos = new vscode.Position(line, char)
+  const uri = vscode.Uri.file(filePath);
+  const pos = new vscode.Position(line, char);
+
   return vscode.commands.executeCommand<vscode.CompletionList>(
     'vscode.executeCompletionItemProvider',
     uri,
     pos,
     triggerCharacter
-  )
+  );
 }
