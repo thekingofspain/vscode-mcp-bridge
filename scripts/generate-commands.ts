@@ -102,9 +102,10 @@ async function generateCommands(): Promise<void> {
     const content = fs.readFileSync(defPath, 'utf-8')
     const def = yaml.load(content) as ToolDefinition
 
-    // Generate schema.ts
+    // Generate schema.ts with zod import
     const schema = generateZodSchema(def)
-    fs.writeFileSync(path.join(commandsDir, folder, 'schema.ts'), schema + '\n')
+    const schemaContent = 'import { z } from \'zod\'\n\n' + schema + '\n'
+    fs.writeFileSync(path.join(commandsDir, folder, 'schema.ts'), schemaContent)
 
     // Generate index.ts
     const pascalName = pascalCase(def.tool)

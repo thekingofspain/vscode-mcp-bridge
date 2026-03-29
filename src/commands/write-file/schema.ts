@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export const WriteFileInputSchema = z.object({
   filePath: z.string().describe("Absolute path to the file"),
   content: z.string().describe("The full content to write"),

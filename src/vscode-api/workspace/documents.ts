@@ -93,7 +93,7 @@ export async function closeFile(filePath: string): Promise<{ closed: boolean; fi
       })
   )
 
-  return { closed: closedTabs.length > 0, filePath }
+  return { closed: closedTabs > 0, filePath }
 }
 
 /**

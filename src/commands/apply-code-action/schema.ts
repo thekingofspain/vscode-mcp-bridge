@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export const ApplyCodeActionInputSchema = z.object({
   filePath: z.string().describe("Absolute path to the file"),
   startLine: z.number().min(0).describe("Start line (0-indexed)"),

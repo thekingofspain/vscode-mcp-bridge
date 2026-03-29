@@ -1,7 +1,7 @@
 // AUTO-GENERATED - DO NOT EDIT
 // Source: src/commands/*/definition.yaml
 // Run: npm run generate:commands
-// Generated: 2026-03-29T01:31:03.124Z
+// Generated: 2026-03-29T01:35:28.530Z
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Settings } from '../../config/Settings.js'
