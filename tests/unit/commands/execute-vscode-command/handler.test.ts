@@ -1,4 +1,3 @@
-
 /**
  * Tests for execute_vscode_command handler
  *

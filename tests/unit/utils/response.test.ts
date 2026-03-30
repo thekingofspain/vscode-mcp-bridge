@@ -1,6 +1,3 @@
-
-
-
 /**
  * Tests for response utility functions
  *
