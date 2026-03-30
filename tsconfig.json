@@ -44,7 +44,8 @@
   },
   "include": [
     "src/**/*",
-    ".generated/**/*"
+    ".generated/**/*",
+    "tests/**/*.ts"
   ],
   "exclude": [
     "node_modules",
