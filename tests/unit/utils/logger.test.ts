@@ -1,7 +1,3 @@
-
-
-
-
 /**
  * Tests for logger utility
  *

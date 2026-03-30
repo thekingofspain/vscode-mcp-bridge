@@ -1,16 +1,16 @@
-import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // E2E tests run in real VSCode instance
-    timeout: 30000,
+    // E2E tests require @vscode/test-cli and run in real VSCode
+    // This config is placeholder - use 'npm run test:e2e' with @vscode/test-cli instead
 
-    include: [
-      'tests/e2e/**/*.test.ts',
-    ],
+    // Mark as disabled - e2e tests use Mocha via @vscode/test-cli
+    include: [],
 
     exclude: [
+      'tests/e2e/**/*', // E2E tests use Mocha, not Vitest
       'node_modules',
       'out',
       'dist',
@@ -18,22 +18,7 @@ export default defineConfig({
       'test-fixtures',
     ],
 
-    // Use Node environment (VSCode provides the API)
     environment: 'node',
-
-    // Don't run in parallel for E2E tests
-    pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
-
-    // Test output
-    reporters: ['verbose'],
-
-    // Don't isolate - tests may depend on shared state
-    isolate: false,
   },
 
   resolve: {

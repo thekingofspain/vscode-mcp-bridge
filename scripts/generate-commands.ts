@@ -114,16 +114,13 @@ async function generateCommands(): Promise<void> {
     const schemaContent = 'import { z } from \'zod\'\n\n' + schema + '\n'
     fs.writeFileSync(path.join(commandsDir, folder, 'schema.ts'), schemaContent)
 
-    // Generate index.ts
-    const pascalName = pascalCase(def.tool)
-    const index = '// Auto-generated from definition.yaml\n' +
-      'export { execute } from \'./handler.js\'\n' +
-      'export { ' + pascalName + 'InputSchema } from \'./schema.js\'\n' +
-      'export { register' + pascalName + ' } from \'./handler.js\'\n'
-    fs.writeFileSync(path.join(commandsDir, folder, 'index.ts'), index)
+    // Skip index.ts generation to avoid esbuild getter-only export issues
+    // See: https://github.com/evanw/esbuild/issues/587
 
-    // Add to registry
-    registryImports.push('import { execute as ' + pascalName + 'Execute, ' + pascalName + 'InputSchema } from \'../../commands/' + folder + '/index.js\'')
+    // Add to registry - import directly from handler and schema
+    const pascalName = pascalCase(def.tool)
+    registryImports.push('import { execute as ' + pascalName + 'Execute } from \'../../commands/' + folder + '/handler.js\'')
+    registryImports.push('import { ' + pascalName + 'InputSchema } from \'../../commands/' + folder + '/schema.js\'')
     registryCalls.push('    server.registerTool(\'' + def.tool + '\', {\n      description: \'' + def.description.replace(/'/g, "\\'") + '\',\n      inputSchema: ' + pascalName + 'InputSchema\n    }, ' + pascalName + 'Execute as never)\n  ')
 
     console.log('Generated ' + folder)

@@ -112,7 +112,8 @@
     "test": "vitest run",
     "test:unit": "vitest run --dir src",
     "test:integration": "vitest run --dir tests/integration",
-    "test:e2e": "vitest run --dir tests/e2e --config vitest.e2e.config.ts",
+    "test:e2e": "vscode-test",
+    "test:e2e:build": "npm run build && npx tsc -p tsconfig.test.json && npm run test:e2e",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui"

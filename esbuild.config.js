@@ -6,13 +6,17 @@ const isProd = process.argv.includes('--production')
 const buildOptions = {
   entryPoints: ['src/extension/extension.ts'],
   bundle: true,
-  outfile: 'out/extension.js',
+  outfile: 'out/extension.cjs',  // Use .cjs for CommonJS
   external: ['vscode'], // Must be external - provided by VS Code runtime
   format: 'cjs',        // Must be cjs - VS Code extension host requires CommonJS
   platform: 'node',
   target: 'node20',
   sourcemap: !isProd,
   minify: isProd,
+  // Use main fields to prefer CommonJS exports
+  mainFields: ['module', 'main'],
+  // Preserve original export structure
+  outExtension: { '.js': '.cjs' },
 }
 
 if (isWatch) {

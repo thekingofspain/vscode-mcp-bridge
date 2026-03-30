@@ -1,15 +1,57 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "out/tests",
+    "rootDir": ".",
     "strict": false,
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "lib": [
+      "ES2022"
+    ],
+    "esModuleInterop": true,
+    "baseUrl": "src",
+    "paths": {
+      "@commands/*": [
+        "commands/*"
+      ],
+      "@config/*": [
+        "config/*"
+      ],
+      "@extension/*": [
+        "extension/*"
+      ],
+      "@mcp/*": [
+        "mcp/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@type-defs/*": [
+        "types/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ],
+      "@vscode-api/*": [
+        "vscode-api/*"
+      ],
+      "@generated/*": [
+        "../.generated/*"
+      ]
+    }
   },
   "include": [
     "src/**/__tests__/**/*.ts",
     "tests/**/*.ts"
   ],
-  "exclude": []
+  "exclude": [
+    "node_modules",
+    "out",
+    "scripts"
+  ]
 }
