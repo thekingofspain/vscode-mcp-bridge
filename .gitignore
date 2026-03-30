@@ -7,3 +7,5 @@ out/
 .claude/settings.local.json
 types/
 .generated/
+.vscode-test/
+*.code-workspace

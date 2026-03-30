@@ -9,12 +9,16 @@
   "files.exclude": {
     "**/node_modules": true,
     "**/dist": true,
-    "**/out": true
+    "**/out": true,
+    "**/.generated": true,
+    "**/.vscode-test": true
   },
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
-    "**/out": true
+    "**/out": true,
+    "**/.generated": true,
+    "**/.vscode-test": true
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
@@ -23,5 +27,8 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "vitest.enable": true,
-  "vitest.workspace": "vitest.config.ts"
+  "vitest.workspace": "vitest.config.ts",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }
