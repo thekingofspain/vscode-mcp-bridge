@@ -1,4 +1,3 @@
-
 /**
  * Tests for read_file command schema validation
  *

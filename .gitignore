@@ -9,3 +9,5 @@ types/
 .generated/
 .vscode-test/
 *.code-workspace
+*.txt
+run-e2e-tests.mjs

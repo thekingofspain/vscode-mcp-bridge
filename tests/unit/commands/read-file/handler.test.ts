@@ -1,11 +1,8 @@
- 
- 
- 
 /**
- * Tests for read_file command handler
- *
- * Tests the read_file MCP tool handler with mocked VSCode API.
- */
+* Tests for read_file command handler
+*
+* Tests the read_file MCP tool handler with mocked VSCode API.
+*/
 
 import { execute } from '@commands/read-file/handler.js';
 import * as documents from '@vscode-api/workspace/documents.js';

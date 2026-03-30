@@ -1,5 +1,3 @@
-
-
 /**
  * Manual mocks for vscode module
  * Place this in __mocks__/vscode.ts

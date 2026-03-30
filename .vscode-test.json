@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vscode-test/main/src/types/types.d.ts",
+  "files": [
+    "./out/extension.cjs",
+    "./out/tests/e2e/**/*.test.js"
+  ],
+  "launchArgs": [
+    "--disable-extensions",
+    "--disable-gpu",
+    "--disable-workspace-trust",
+    "--skip-release-notes"
+  ],
+  "extensionDevelopmentPath": ".",
+  "testWorkspace": "./tests/fixtures/sample-project",
+  "mocha": {
+    "ui": "tdd",
+    "timeout": 60000,
+    "color": true,
+    "reporter": "spec",
+    "file": ["./out/tests/e2e/extension.e2e.test.js"]
+  },
+  "version": "stable"
+}
